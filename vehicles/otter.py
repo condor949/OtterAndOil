@@ -219,7 +219,6 @@ class otter:
         self.wn_d = self.wn / 5  # desired natural frequency in yaw
         self.zeta_d = 1  # desired relative damping ratio
 
-
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
         """
         [nu,u_actual] = dynamics(eta,nu,u_actual,u_control,sampleTime) integrates
@@ -319,7 +318,6 @@ class otter:
 
         return nu, u_actual
 
-
     def controlAllocation(self, tau_X, tau_N):
         """
         [n1, n2] = controlAllocation(tau_X, tau_N)
@@ -332,76 +330,3 @@ class otter:
         n2 = np.sign(u_alloc[1]) * math.sqrt(abs(u_alloc[1]))
 
         return n1, n2
-
-
-    def headingAutopilot(self, eta, nu, sampleTime):
-        """
-        u = headingAutopilot(eta,nu,sampleTime) is a PID controller
-        for automatic heading control based on pole placement.
-
-        tau_N = (T/K) * a_d + (1/K) * rd
-               - Kp * ( ssa( psi-psi_d ) + Td * (r - r_d) + (1/Ti) * z )
-
-        """
-        psi = eta[5]  # yaw angle
-        r = nu[5]  # yaw rate
-        e_psi = psi - self.psi_d  # yaw angle tracking error
-        e_r = r - self.r_d  # yaw rate tracking error
-        psi_ref = self.ref * math.pi / 180  # yaw angle setpoint
-
-        wn = self.wn  # PID natural frequency
-        zeta = self.zeta  # PID natural relative damping factor
-        wn_d = self.wn_d  # reference model natural frequency
-        zeta_d = self.zeta_d  # reference model relative damping factor
-
-        m = 41.4  # moment of inertia in yaw including added mass
-        T = 1
-        K = T / m
-        d = 1 / K
-        k = 0
-
-        # PID feedback controller with 3rd-order reference model
-        tau_X = self.tauX
-
-        [tau_N, self.e_int, self.psi_d, self.r_d, self.a_d] = PIDpolePlacement(
-            self.e_int,
-            e_psi,
-            e_r,
-            self.psi_d,
-            self.r_d,
-            self.a_d,
-            m,
-            d,
-            k,
-            wn_d,
-            zeta_d,
-            wn,
-            zeta,
-            psi_ref,
-            self.r_max,
-            sampleTime,
-        )
-
-        [n1, n2] = self.controlAllocation(tau_X, tau_N)
-        u_control = np.array([n1, n2], float)
-
-        return u_control
-
-
-    def stepInput(self, t):
-        """
-        u = stepInput(t) generates propeller step inputs.
-        """
-        n1 = 100  # rad/s
-        n2 = 80
-
-        if t > 30 and t < 100:
-            n1 = 80
-            n2 = 120
-        else:
-            n1 = 0
-            n2 = 0
-
-        u_control = np.array([n1, n2], float)
-
-        return u_control

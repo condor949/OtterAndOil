@@ -160,7 +160,7 @@ def plotControls(simTime, simData, vehicle, figNo):
 
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
-def plot3D(simData,numDataPoints,FPS,filename,figNo):
+def plot3D(simData, numDataPoints, FPS, filename, figNo):
         
     # State vectors
     x = simData[:,0]

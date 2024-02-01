@@ -146,10 +146,10 @@ def m2c(M, nu):
 
     if (len(nu) == 6):      #  6-DOF model
     
-        M11 = M[0:3,0:3]
-        M12 = M[0:3,3:6] 
+        M11 = M[0:3, 0:3]
+        M12 = M[0:3, 3:6]
         M21 = M12.T
-        M22 = M[3:6,3:6] 
+        M22 = M[3:6, 3:6]
     
         nu1 = nu[0:3]
         nu2 = nu[3:6]
@@ -159,9 +159,9 @@ def m2c(M, nu):
         #C  = [  zeros(3,3)      -Smtrx(dt_dnu1)
         #      -Smtrx(dt_dnu1)  -Smtrx(dt_dnu2) ]
         C = np.zeros( (6,6) )    
-        C[0:3,3:6] = -Smtrx(dt_dnu1)
-        C[3:6,0:3] = -Smtrx(dt_dnu1)
-        C[3:6,3:6] = -Smtrx(dt_dnu2)
+        C[0:3, 3:6] = -Smtrx(dt_dnu1)
+        C[3:6, 0:3] = -Smtrx(dt_dnu1)
+        C[3:6, 3:6] = -Smtrx(dt_dnu2)
             
     else:   # 3-DOF model (surge, sway and yaw)
         #C = [ 0             0            -M(2,2)*nu(2)-M(2,3)*nu(3)

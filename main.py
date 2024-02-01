@@ -18,7 +18,7 @@ from lib import *
 
 # Simulation parameters: 
 sampleTime = 0.02                   # sample time [seconds]
-N = 50000                           # number of samples
+N = 20000                           # number of samples
 
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
 numDataPoints = 500                  # number of 3D data points
@@ -31,7 +31,7 @@ browser = 'chrome'                  # browser for visualization of animated GIF
 ###############################################################################
 printSimInfo()
 
-vehicle = otter('headingAutopilot',100.0,0,-30.0,200.0)
+vehicle = otter(V_current=0, beta_current=-30.0)
 printVehicleinfo(vehicle, sampleTime, N)
 
 ###############################################################################
