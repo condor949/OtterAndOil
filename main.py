@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import argparse
 from vehicles import *
 from lib import *
+from tools.dataStorage import *
 
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
 numDataPoints = 500  # number of 3D data points
@@ -57,15 +58,18 @@ if __name__ == '__main__':
     vehicle = otter(V_current=args.V_current, beta_current=args.beta_current)
     printVehicleinfo(vehicle, args.sampleTime, args.N)
 
-    [simTime, simData] = simulate(args.N, args.sampleTime, vehicle)
+    # [simTime, simData] = simulate(args.N, args.sampleTime, vehicle)
 
     # plotVehicleStates(simTime, simData, 1)
     # plotControls(simTime, simData, vehicle, 2)
-    plot3D(simData, numDataPoints, FPS, filename, 3)
+    # plot3D(simData, numDataPoints, FPS, filename, 3)
 
     """ Uncomment the line below for 3D animation in the web browser. 
     Alternatively, open the animated GIF file manually in your preferred browser. """
     # webbrowser.get(browser).open_new_tab('file://' + os.path.abspath(filename))
+    new_folder = create_timestamped_folder()
+    print(f"Created new folder: {new_folder}")
+    print(create_timestamped_suffix())
 
-    plt.show()
-    plt.close()
+    # plt.show()
+    # plt.close()
