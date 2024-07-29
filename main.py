@@ -42,6 +42,8 @@ if __name__ == '__main__':
                            help='sample time [seconds]')
     sym_param.add_argument('-C', '--cycles', metavar='cycles', default=1,
                            help='the number of repetitions of the experiment')
+    sym_param.add_argument('-cc', '--clean-cache', action='store_true', dest='clean_cache', default=False,
+                           help='clean data directories')
     veh_params = parser.add_argument_group('vehicle parameters')
     veh_params.add_argument('-V', '--v-current', metavar='V_current', default=0, dest='V_current',
                             help='current speed (m/s)')
@@ -67,6 +69,8 @@ if __name__ == '__main__':
     """ Uncomment the line below for 3D animation in the web browser. 
     Alternatively, open the animated GIF file manually in your preferred browser. """
     # webbrowser.get(browser).open_new_tab('file://' + os.path.abspath(filename))
+    if args.clean_cache:
+        clean_data()
     new_folder = create_timestamped_folder()
     print(f"Created new folder: {new_folder}")
     print(create_timestamped_suffix())

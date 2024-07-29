@@ -1,5 +1,6 @@
 import os
 import datetime
+import shutil
 
 
 def create_timestamped_suffix() -> str:
@@ -47,8 +48,21 @@ def create_timestamped_folder(base_path="./data"):
 
     return folder_path
 
-# Example usage
-# base_name = "experiment"
-# extension = "csv"
-# filename = create_experiment_filename(base_name, extension)
-# print(filename)
+
+def clean_data():
+    """
+        Deletes the 'data' folder in the script's directory if it exists.
+        """
+    # Get the path of the script's directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Path to the 'data' folder
+    data_folder_path = os.path.join(script_dir, "..", "data")
+
+    # Check if the 'data' folder exists
+    if os.path.exists(data_folder_path) and os.path.isdir(data_folder_path):
+        # Delete the 'data' folder and its contents
+        shutil.rmtree(data_folder_path)
+        print(f"Deleted 'data' folder at: {data_folder_path}")
+    else:
+        print(f"'data' folder does not exist at: {data_folder_path}")
