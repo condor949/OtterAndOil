@@ -72,12 +72,12 @@ def Ivan_law(f_current, f_prev, sampleTime):
     return sigma
 
 
-def simulate(N, sampleTime, vehicle):
+def simulate(y,x,N, sampleTime, vehicle):
     DOF = 6  # degrees of freedom
     t = 0  # initial simulation time
 
     # Initial state vectors
-    eta = np.array([0, 0, 0, 0, 0, 0], float)  # position/attitude, user editable
+    eta = np.array([y, x, 0, 0, 0, 0], float)  # position/attitude, user editable
     nu = vehicle.nu  # velocity, defined by vehicle class
     u_actual = vehicle.u_actual  # actual inputs, defined by vehicle class
 

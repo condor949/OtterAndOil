@@ -22,11 +22,14 @@ def create_timestamped_suffix() -> str:
     return timestamp
 
 
-def create_timestamped_filename_ext(base_name: str, extension: str) -> str:
-    return f"{base_name}_{create_timestamped_suffix()}.{extension}"
+def create_timestamped_filename_ext(base_name: str, suffix: str, extension: str) -> str:
+    if len(suffix):
+        return f"{base_name}_{suffix}.{extension}"
+    else:
+        return f"{base_name}_{create_timestamped_suffix()}.{extension}"
 
 
-def create_timestamped_folder(base_path="./data"):
+def create_timestamped_folder(base_path="./data", suffix=""):
     """
     Creates a new folder with a name containing the current date and time.
 
@@ -38,7 +41,10 @@ def create_timestamped_folder(base_path="./data"):
     """
 
     # Construct the folder name
-    folder_name = f"experiment_{create_timestamped_suffix()}"
+    if len(suffix):
+        folder_name = f"experiment_{suffix}"
+    else:
+        folder_name = f"experiment_{create_timestamped_suffix()}"
 
     # Create the full path
     folder_path = os.path.join(base_path, folder_name)

@@ -15,6 +15,7 @@ import numpy as np
 from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
+from tools.randomPoints import color_generator
 
 legendSize = 10  # legend size
 figSize1 = [25, 13]  # figure1 size in cm
@@ -33,7 +34,6 @@ def cm2inch(value):  # inch to cm
 # plotVehicleStates(simTime, simData, figNo) plots the 6-DOF vehicle
 # position/attitude and velocities versus time in figure no. figNo
 def plotVehicleStates(simTime, simData, figNo):
-
     # Time vector
     t = simTime
 
@@ -54,8 +54,8 @@ def plotVehicleStates(simTime, simData, figNo):
     # Speed
     U = np.sqrt(np.multiply(u, u) + np.multiply(v, v) + np.multiply(w, w))
 
-    beta_c  = R2D(ssa(np.arctan2(v,u)))   # crab angle, beta_c    
-    alpha_c = R2D(ssa(np.arctan2(w,u)))   # flight path angle
+    beta_c = R2D(ssa(np.arctan2(v, u)))  # crab angle, beta_c
+    alpha_c = R2D(ssa(np.arctan2(w, u)))  # flight path angle
     chi = R2D(ssa(simData[:, 5] + np.arctan2(v, u)))  # course angle, chi=psi+beta_c
 
     # Plots
@@ -124,7 +124,6 @@ def plotVehicleStates(simTime, simData, figNo):
 # plotControls(simTime, simData) plots the vehicle control inputs versus time
 # in figure no. figNo
 def plotControls(simTime, simData, vehicle, figNo):
-
     DOF = 6
 
     # Time vector
@@ -160,83 +159,77 @@ def plotControls(simTime, simData, vehicle, figNo):
 
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
-def plot3D(simData, numDataPoints, FPS, filename, figNo):
-        
-    # State vectors
-    x = simData[:,0]
-    y = simData[:,1]
-    z = simData[:,2]
-    
-    # down-sampling the xyz data points
-    N = y[::len(x) // numDataPoints];
-    E = x[::len(x) // numDataPoints];
-    D = z[::len(x) // numDataPoints];
-    
-    # Animation function
-    def anim_function(num, dataSet, line):
-        
-        line.set_data(dataSet[0:2, :num])    
-        line.set_3d_properties(dataSet[2, :num])    
-        # ax.view_init(elev=10.0, azim=-120.0)
-        ax.view_init(elev=90, azim=-90)
-        return line
-    
-    dataSet = np.array([N, E, -D])      # Down is negative z
-    
+def plot3D(swarmData, numDataPoints, FPS, filename, figNo):
     # Attaching 3D axis to the figure
-    fig = plt.figure(figNo,figsize=(cm2inch(figSize1[0]),cm2inch(figSize1[1])),
-               dpi=dpiValue)
+    fig = plt.figure(figNo, figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
+                     dpi=dpiValue)
     ax = p3.Axes3D(fig, auto_add_to_figure=False)
     fig.add_axes(ax)
 
     # Plot target circle
-    alpha = np.linspace(0, 2*np.pi, 100)
+    alpha = np.linspace(0, 2 * np.pi, 100)
     r = np.sqrt(30)
     x0 = 10
     y0 = 10
-    x_circ = x0 + r*np.cos(alpha)
-    y_circ = y0 + r*np.sin(alpha)
+    x_circ = x0 + r * np.cos(alpha)
+    y_circ = y0 + r * np.sin(alpha)
     z_circ = np.zeros(100)
     plt.plot(x_circ, y_circ, z_circ, lw=2, c='r')
     plt.scatter([0], [0], [0], lw=6, c='g')
 
-    # Line/trajectory plot
-    line = plt.plot(dataSet[0], dataSet[1], dataSet[2], lw=2, c='b')[0]
+    # Animation function
+    def anim_function(num, dataSet, line):
+        line.set_data(dataSet[0:2, :num])
+        line.set_3d_properties(dataSet[2, :num])
+        # ax.view_init(elev=10.0, azim=-120.0)
+        ax.view_init(elev=90, azim=-90)
+        return line
 
+    color_gen = color_generator()
+    for simData in swarmData:
+        # State vectors
+        x = simData[:, 0]
+        y = simData[:, 1]
+        z = simData[:, 2]
+        # down-sampling the xyz data points
+        N = y[::len(x) // numDataPoints];
+        E = x[::len(x) // numDataPoints];
+        D = z[::len(x) // numDataPoints];
+
+        dataSet = np.array([N, E, -D])  # Down is negative z
+        # Line/trajectory plot
+        line = plt.plot(dataSet[0], dataSet[1], dataSet[2], lw=2, c=next(color_gen))[0]
 
     # Setting the axes properties
     ax.set_xlabel('X / East')
     ax.set_ylabel('Y / North')
-    ax.set_zlim3d([-100, 20])                   # default depth = -100 m
-    
+    ax.set_zlim3d([-100, 20])  # default depth = -100 m
+
     if np.amax(z) > 100.0:
         ax.set_zlim3d([-np.amax(z), 20])
-        
+
     ax.set_zlabel('-Z / Down')
 
     # Plot 2D surface for z = 0
     [x_min, x_max] = ax.get_xlim()
     [y_min, y_max] = ax.get_ylim()
-    x_grid = np.arange(x_min-20, x_max+20)
-    y_grid = np.arange(y_min-20, y_max+20)
+    x_grid = np.arange(x_min - 20, x_max + 20)
+    y_grid = np.arange(y_min - 20, y_max + 20)
     [xx, yy] = np.meshgrid(x_grid, y_grid)
     zz = 0 * xx
     ax.plot_surface(xx, yy, zz, alpha=0.3)
-                    
+
     # Title of plot
     ax.set_title('North-East-Down')
 
-
-
     # Create the animation object
-    ani = animation.FuncAnimation(fig, 
-                         anim_function, 
-                         frames=numDataPoints, 
-                         fargs=(dataSet,line),
-                         interval=200, 
-                         blit=False,
-                         repeat=True)
-    
-    # Save the 3D animation as a gif file
-    ani.save(filename, writer=animation.PillowWriter(fps=FPS))  
+    ani = animation.FuncAnimation(fig,
+                                  anim_function,
+                                  frames=numDataPoints,
+                                  fargs=(dataSet, line),
+                                  interval=200,
+                                  blit=False,
+                                  repeat=True)
 
+    # Save the 3D animation as a gif file
+    ani.save(filename, writer=animation.PillowWriter(fps=FPS))

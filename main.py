@@ -17,11 +17,12 @@ import argparse
 from vehicles import *
 from lib import *
 from tools.dataStorage import *
+from tools.randomPoints import *
 
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
 numDataPoints = 500  # number of 3D data points
 FPS = 10  # frames per second (animated GIF)
-filename = '3D_animation.gif'  # data file for animated GIF
+filename = '3D_animation'  # data file for animated GIF
 browser = 'chrome'  # browser for visualization of animated GIF
 
 ###############################################################################
@@ -36,6 +37,10 @@ if __name__ == '__main__':
                     "target line",
         epilog='The data is stored by timestamps in the data/ directory')
 
+    main_param = parser.add_argument_group('script parameters')
+    main_param.add_argument('-cc', '--clean-cache', action='store_true', dest='clean_cache', default=False,
+                            help='clean data directories')
+
     sym_param = parser.add_argument_group('simulation parameters')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', type=int,
                            help='number of samples')
@@ -43,9 +48,12 @@ if __name__ == '__main__':
                            help='sample time [seconds]')
     sym_param.add_argument('-C', '--cycles', metavar='cycles', default=1, type=int,
                            help='the number of repetitions of the experiment')
-    sym_param.add_argument('-cc', '--clean-cache', action='store_true', dest='clean_cache', default=False,
-                           help='clean data directories')
-    veh_params = parser.add_argument_group('vehicle parameters')
+    sym_param.add_argument('-R', '--start-radius', metavar='radius', default=1, type=int, dest='radius',
+                           help='the radius of the catamaran starting position (m)')
+    sym_param.add_argument('-NC', '--number-catamarans', metavar='catamarans', default=1, type=int, dest='catamarans',
+                           help='the number of catamaran models participating in the experiment')
+
+    veh_params = parser.add_argument_group('catamaran parameters')
     veh_params.add_argument('-V', '--v-current', metavar='V_current', default=0, dest='V_current', type=float,
                             help='current speed (m/s)')
     veh_params.add_argument('-bC', '--beta-current', metavar='beta_current', default=-30.0, dest='beta_current',
@@ -61,10 +69,9 @@ if __name__ == '__main__':
     vehicle = otter(V_current=args.V_current, beta_current=args.beta_current)
     printVehicleinfo(vehicle, args.sampleTime, args.N)
 
-    # [simTime, simData] = simulate(args.N, args.sampleTime, vehicle)
-
     # plotVehicleStates(simTime, simData, 1)
     # plotControls(simTime, simData, vehicle, 2)
+    # [simTime, simData] = simulate(args.N, args.sampleTime, vehicle)
     # plot3D(simData, numDataPoints, FPS, filename, 3)
 
     """ Uncomment the line below for 3D animation in the web browser. 
@@ -72,9 +79,21 @@ if __name__ == '__main__':
     # webbrowser.get(browser).open_new_tab('file://' + os.path.abspath(filename))
     if args.clean_cache:
         clean_data()
-    new_folder = create_timestamped_folder()
-    print(f"Created new folder: {new_folder}")
-    print(create_timestamped_suffix())
+    start_points = [[0, 0]]
+    for i in range(args.cycles):
+        if args.catamarans > 1:
+            start_points = generate_random_points(args.radius, args.catamarans)
+        timestamped_suffix: str = create_timestamped_suffix()
+        swarmData = []
+        for point in start_points:
+            [simTime, simData] = simulate(point[0], point[1], args.N, args.sampleTime, vehicle)
+            swarmData.append(simData)
+        plot3D(swarmData, numDataPoints, FPS, os.path.join(create_timestamped_folder(suffix=timestamped_suffix),
+                                                           create_timestamped_filename_ext(filename, timestamped_suffix,
+                                                                                           "gif")), 1)
+        # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
+        # print(f"Created new folder: {new_folder}")
+        # print(timestamped_suffix)
 
     # plt.show()
     # plt.close()
