@@ -30,9 +30,10 @@ browser = 'chrome'  # browser for visualization of animated GIF
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        prog='ProgramName',
-        description='What the program does',
-        epilog='Text at the bottom of help')
+        prog='Otter and Oil',
+        description="The program performs a series of calculations of the catamaran's trajectory at the exit to the "
+                    "target line",
+        epilog='The data is stored by timestamps in the data/ directory')
 
     sym_param = parser.add_argument_group('simulation parameters')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', help='number of samples')
