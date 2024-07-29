@@ -41,7 +41,6 @@ Author:     Thor I. Fossen
 """
 import numpy as np
 import math
-from lib.control import PIDpolePlacement
 from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 
 # Class Vehicle
