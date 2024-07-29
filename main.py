@@ -37,18 +37,19 @@ if __name__ == '__main__':
         epilog='The data is stored by timestamps in the data/ directory')
 
     sym_param = parser.add_argument_group('simulation parameters')
-    sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', help='number of samples')
-    sym_param.add_argument('-sT', '--sample-time', metavar='sampleTime', default=0.02, dest='sampleTime',
+    sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', type=int,
+                           help='number of samples')
+    sym_param.add_argument('-sT', '--sample-time', metavar='sampleTime', default=0.02, dest='sampleTime', type=float,
                            help='sample time [seconds]')
-    sym_param.add_argument('-C', '--cycles', metavar='cycles', default=1,
+    sym_param.add_argument('-C', '--cycles', metavar='cycles', default=1, type=int,
                            help='the number of repetitions of the experiment')
     sym_param.add_argument('-cc', '--clean-cache', action='store_true', dest='clean_cache', default=False,
                            help='clean data directories')
     veh_params = parser.add_argument_group('vehicle parameters')
-    veh_params.add_argument('-V', '--v-current', metavar='V_current', default=0, dest='V_current',
+    veh_params.add_argument('-V', '--v-current', metavar='V_current', default=0, dest='V_current', type=float,
                             help='current speed (m/s)')
     veh_params.add_argument('-bC', '--beta-current', metavar='beta_current', default=-30.0, dest='beta_current',
-                            help='current direction (deg)')
+                            type=float, help='current direction (deg)')
 
     args = parser.parse_args()
 
