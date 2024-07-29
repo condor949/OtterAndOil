@@ -43,6 +43,7 @@ import numpy as np
 import math
 from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 
+
 # Class Vehicle
 class otter:
     """
@@ -57,25 +58,25 @@ class otter:
     """
 
     def __init__(
-        self, 
-        controlSystem="stepInput", 
-        r = 0, 
-        V_current = 0, 
-        beta_current = 0,
-        tau_X = 120
+            self,
+            controlSystem="stepInput",
+            r=0,
+            V_current=0,
+            beta_current=0,
+            tau_X=120
     ):
-        
+
         # Constants
-        D2R = math.pi / 180     # deg2rad
-        self.g = 9.81           # acceleration of gravity (m/s^2)
-        rho = 1026              # density of water (kg/m^3)
+        D2R = math.pi / 180  # deg2rad
+        self.g = 9.81  # acceleration of gravity (m/s^2)
+        rho = 1026  # density of water (kg/m^3)
 
         if controlSystem == "headingAutopilot":
             self.controlDescription = (
-                "Heading autopilot, psi_d = "
-                + str(r)
-                + " deg"
-                )
+                    "Heading autopilot, psi_d = "
+                    + str(r)
+                    + " deg"
+            )
         else:
             self.controlDescription = "Step inputs for n1 and n2"
             controlSystem = "stepInput"
@@ -88,8 +89,8 @@ class otter:
 
         # Initialize the Otter USV model
         self.T_n = 1.0  # propeller time constants (s)
-        self.L = 2.0    # Length (m)
-        self.B = 1.08   # beam (m)
+        self.L = 2.0  # Length (m)
+        self.B = 1.08  # beam (m)
         self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
         self.name = "Otter USV (see 'otter.py' for more details)"
@@ -101,11 +102,11 @@ class otter:
         self.dimU = len(self.controls)
 
         # Vehicle parameters
-        m = 55.0                                 # mass (kg)
-        self.mp = 25.0                           # Payload (kg)
+        m = 55.0  # mass (kg)
+        self.mp = 25.0  # Payload (kg)
         self.m_total = m + self.mp
-        self.rp = np.array([0.05, 0, -0.35], float) # location of payload (m)
-        rg = np.array([0.2, 0, -0.2], float)     # CG for hull only (m)
+        self.rp = np.array([0.05, 0, -0.35], float)  # location of payload (m)
+        rg = np.array([0.2, 0, -0.2], float)  # CG for hull only (m)
         rg = (m * rg + self.mp * self.rp) / (m + self.mp)  # CG corrected for payload
         self.S_rg = Smtrx(rg)
         self.H_rg = Hmtrx(rg)
@@ -114,14 +115,14 @@ class otter:
         R44 = 0.4 * self.B  # radii of gyration (m)
         R55 = 0.25 * self.L
         R66 = 0.25 * self.L
-        T_yaw = 1.0         # time constant in yaw (s)
-        Umax = 6 * 0.5144   # max forward speed (m/s)
+        T_yaw = 1.0  # time constant in yaw (s)
+        Umax = 6 * 0.5144  # max forward speed (m/s)
 
         # Data for one pontoon
         self.B_pont = 0.25  # beam of one pontoon (m)
-        y_pont = 0.395      # distance from centerline to waterline centroid (m)
-        Cw_pont = 0.75      # waterline area coefficient (-)
-        Cb_pont = 0.4       # block coefficient, computed from m = 55 kg
+        y_pont = 0.395  # distance from centerline to waterline centroid (m)
+        Cw_pont = 0.75  # waterline area coefficient (-)
+        Cb_pont = 0.4  # block coefficient, computed from m = 55 kg
 
         # Inertia dyadic, volume displacement and draft
         nabla = (m + self.mp) / rho  # volume
@@ -135,7 +136,7 @@ class otter:
         self.k_pos = 0.02216 / 2  # Positive Bollard, one propeller
         self.k_neg = 0.01289 / 2  # Negative Bollard, one propeller
         self.n_max = math.sqrt((0.5 * 24.4 * self.g) / self.k_pos)  # max. prop. rev.
-        self.n_min = -math.sqrt((0.5 * 13.6 * self.g) / self.k_neg) # min. prop. rev.
+        self.n_min = -math.sqrt((0.5 * 13.6 * self.g) / self.k_neg)  # min. prop. rev.
 
         # MRB_CG = [ (m+mp) * I3  O3      (Fossen 2021, Chapter 3)
         #               O3       Ig ]
@@ -161,21 +162,21 @@ class otter:
         # Hydrostatic quantities (Fossen 2021, Chapter 4)
         Aw_pont = Cw_pont * self.L * self.B_pont  # waterline area, one pontoon
         I_T = (
-            2
-            * (1 / 12)
-            * self.L
-            * self.B_pont ** 3
-            * (6 * Cw_pont ** 3 / ((1 + Cw_pont) * (1 + 2 * Cw_pont)))
-            + 2 * Aw_pont * y_pont ** 2
+                2
+                * (1 / 12)
+                * self.L
+                * self.B_pont ** 3
+                * (6 * Cw_pont ** 3 / ((1 + Cw_pont) * (1 + 2 * Cw_pont)))
+                + 2 * Aw_pont * y_pont ** 2
         )
         I_L = 0.8 * 2 * (1 / 12) * self.B_pont * self.L ** 3
         KB = (1 / 3) * (5 * self.T / 2 - 0.5 * nabla / (self.L * self.B_pont))
         BM_T = I_T / nabla  # BM values
         BM_L = I_L / nabla
-        KM_T = KB + BM_T    # KM values
+        KM_T = KB + BM_T  # KM values
         KM_L = KB + BM_L
         KG = self.T - rg[2]
-        GM_T = KM_T - KG    # GM values
+        GM_T = KM_T - KG  # GM values
         GM_L = KM_L - KG
 
         G33 = rho * self.g * (2 * Aw_pont)  # spring stiffness
@@ -192,7 +193,7 @@ class otter:
         w5 = math.sqrt(G55 / self.M[4, 4])
 
         # Linear damping terms (hydrodynamic derivatives)
-        Xu = -24.4 *self. g / Umax  # specified using the maximum speed
+        Xu = -24.4 * self.g / Umax  # specified using the maximum speed
         Yv = 0
         Zw = -2 * 0.3 * w3 * self.M[2, 2]  # specified using relative damping
         Kp = -2 * 0.2 * w4 * self.M[3, 3]
@@ -232,7 +233,7 @@ class otter:
         v_c = self.V_c * math.sin(self.beta_c - eta[5])  # current sway vel.
 
         nu_c = np.array([u_c, v_c, 0, 0, 0, 0], float)  # current velocity vector
-        Dnu_c = np.array([nu[5]*v_c, -nu[5]*u_c, 0, 0, 0, 0],float) # derivative
+        Dnu_c = np.array([nu[5] * v_c, -nu[5] * u_c, 0, 0, 0, 0], float)  # derivative
         nu_r = nu - nu_c  # relative velocity vector
 
         # Rigid body and added mass Coriolis and centripetal matrices
@@ -253,10 +254,10 @@ class otter:
 
         # Payload force and moment expressed in BODY
         R = Rzyx(eta[3], eta[4], eta[5])
-        f_payload = np.matmul(R.T, np.array([0, 0, self.mp * self.g], float))              
+        f_payload = np.matmul(R.T, np.array([0, 0, self.mp * self.g], float))
         m_payload = np.matmul(self.S_rp, f_payload)
-        g_0 = np.array([ f_payload[0],f_payload[1],f_payload[2], 
-                         m_payload[0],m_payload[1],m_payload[2] ])
+        g_0 = np.array([f_payload[0], f_payload[1], f_payload[2],
+                        m_payload[0], m_payload[1], m_payload[2]])
 
         # Control forces and moments - with propeller revolution saturation
         thrust = np.zeros(2)
@@ -288,12 +289,12 @@ class otter:
         # State derivatives (with dimension)
         tau_crossflow = crossFlowDrag(self.L, self.B_pont, self.T, nu_r)
         sum_tau = (
-            tau
-            + tau_damp
-            + tau_crossflow
-            - np.matmul(C, nu_r)
-            - np.matmul(self.G, eta)
-            + g_0
+                tau
+                + tau_damp
+                + tau_crossflow
+                - np.matmul(C, nu_r)
+                - np.matmul(self.G, eta)
+                + g_0
         )
 
         # print(f"{sum_tau=}")

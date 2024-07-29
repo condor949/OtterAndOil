@@ -17,7 +17,6 @@ import argparse
 from vehicles import *
 from lib import *
 
-
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
 numDataPoints = 500  # number of 3D data points
 FPS = 10  # frames per second (animated GIF)
@@ -38,21 +37,21 @@ if __name__ == '__main__':
     sym_param = parser.add_argument_group('simulation parameters')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', help='number of samples')
     sym_param.add_argument('-sT', '--sample-time', metavar='sampleTime', default=0.02, dest='sampleTime',
-                        help='sample time [seconds]')
+                           help='sample time [seconds]')
     sym_param.add_argument('-C', '--cycles', metavar='cycles', default=1,
-                        help='the number of repetitions of the experiment')
+                           help='the number of repetitions of the experiment')
     veh_params = parser.add_argument_group('vehicle parameters')
     veh_params.add_argument('-V', '--v-current', metavar='V_current', default=0, dest='V_current',
-                        help='current speed (m/s)')
+                            help='current speed (m/s)')
     veh_params.add_argument('-bC', '--beta-current', metavar='beta_current', default=-30.0, dest='beta_current',
-                        help='current direction (deg)')
+                            help='current direction (deg)')
 
     args = parser.parse_args()
 
     ###############################################################################
     # Vehicle constructors
     ###############################################################################
-    printSimInfo()
+    # printSimInfo()
 
     vehicle = otter(V_current=args.V_current, beta_current=args.beta_current)
     printVehicleinfo(vehicle, args.sampleTime, args.N)

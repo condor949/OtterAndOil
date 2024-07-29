@@ -9,7 +9,8 @@ Author:     Thor I. Fossen
 import numpy as np
 import math
 
-def clarke83(U,L,B,T,Cb,R66,xg,T_surge):
+
+def clarke83(U, L, B, T, Cb, R66, xg, T_surge):
     """ 
     [M,N] = clarke83(U,L,B,T,Cb,R66,xg,T_surge) computes the system matrices 
     of a linear maneuvering model based on Clarke et al. (1983). The  
@@ -48,62 +49,57 @@ def clarke83(U,L,B,T,Cb,R66,xg,T_surge):
     """
 
     # Rigid-body parameters
-    rho = 1025                      # density of water
-    V = Cb * L * B * T              # volume displacment
-    m = rho * V                     # mass
-    Iz = m * R66**2 + m * xg**2     # moment of inerta about the CO
-    
+    rho = 1025  # density of water
+    V = Cb * L * B * T  # volume displacment
+    m = rho * V  # mass
+    Iz = m * R66 ** 2 + m * xg ** 2  # moment of inerta about the CO
+
     # Rigid-body inertia matrix
     MRB = np.array([
-        [ m, 0 ,0], 
-        [ 0, m ,m*xg], 
-        [ 0, m*xg ,Iz] ],float)
+        [m, 0, 0],
+        [0, m, m * xg],
+        [0, m * xg, Iz]], float)
 
     # Nondimenisonal hydrodynamic derivatives in surge
     Xudot = -0.1 * m
-    U += 0.001                 # avoid the singularity for U = 0
-    Xu = -( ( m-Xudot )/T_surge ) / ( 0.5 * rho * L**2 * U )
-    Xudot = Xudot / ( 0.5 * rho * L**3 )
+    U += 0.001  # avoid the singularity for U = 0
+    Xu = -((m - Xudot) / T_surge) / (0.5 * rho * L ** 2 * U)
+    Xudot = Xudot / (0.5 * rho * L ** 3)
 
     # Nondimenisonal hydrodynamic derivatives in sway and yaw
     # from Clarke et al. (1983)
-    S = math.pi * (T/L)**2                 # scale factor
+    S = math.pi * (T / L) ** 2  # scale factor
 
-    Yvdot = -S * ( 1 + 0.16 * Cb * B/T - 5.1 * (B/L)**2 )
-    Yrdot = -S * ( 0.67 * B/L - 0.0033 * (B/T)**2 )
-    Nvdot = -S * ( 1.1 * B/L - 0.041 * (B/T) )
-    Nrdot = -S * ( 1/12 + 0.017 * Cb * (B/T) - 0.33 * (B/L) )
-    Yv = -S * ( 1 + 0.4 * Cb * (B/T) )
-    Yr = -S * ( -1/2 + 2.2 * (B/L) - 0.08 * (B/T) )
-    Nv = -S * ( 1/2 + 2.4 * (T/L) )
-    Nr = -S * ( 1/4 + 0.039 * (B/T) - 0.56 * (B/L) )
+    Yvdot = -S * (1 + 0.16 * Cb * B / T - 5.1 * (B / L) ** 2)
+    Yrdot = -S * (0.67 * B / L - 0.0033 * (B / T) ** 2)
+    Nvdot = -S * (1.1 * B / L - 0.041 * (B / T))
+    Nrdot = -S * (1 / 12 + 0.017 * Cb * (B / T) - 0.33 * (B / L))
+    Yv = -S * (1 + 0.4 * Cb * (B / T))
+    Yr = -S * (-1 / 2 + 2.2 * (B / L) - 0.08 * (B / T))
+    Nv = -S * (1 / 2 + 2.4 * (T / L))
+    Nr = -S * (1 / 4 + 0.039 * (B / T) - 0.56 * (B / L))
 
     # Nondimenisonal hydrodynamic matrices 
     MA_prime = np.array([
-        [ -Xudot, 0 ,0], 
-        [ 0, -Yvdot, -Yrdot], 
-        [ 0, -Nvdot, -Nrdot] ],float)
+        [-Xudot, 0, 0],
+        [0, -Yvdot, -Yrdot],
+        [0, -Nvdot, -Nrdot]], float)
 
-    N_prime  = np.array([
-        [ -Xu, 0 ,0], 
-        [ 0, -Yv, -Yr], 
-        [ 0, -Nv, -Nr] ],float)
- 
+    N_prime = np.array([
+        [-Xu, 0, 0],
+        [0, -Yv, -Yr],
+        [0, -Nv, -Nr]], float)
+
     # Dimensional model (Fossen 2021, Appendix D)   
-    T    = np.diag([1, 1, 1/L])
+    T = np.diag([1, 1, 1 / L])
     Tinv = np.diag([1, 1, L])
 
-    MA = (0.5 * rho * L**3) * Tinv @ Tinv @ \
-        np.matmul( T, np.matmul( MA_prime,Tinv ) )
-                  
-    N =  (0.5 * rho * L**2 * U) * Tinv @ Tinv @ \
-        np.matmul( T, np.matmul( N_prime, Tinv ) )
- 
-    M = MRB + MA            # system inertia matrix
-    
+    MA = (0.5 * rho * L ** 3) * Tinv @ Tinv @ \
+         np.matmul(T, np.matmul(MA_prime, Tinv))
+
+    N = (0.5 * rho * L ** 2 * U) * Tinv @ Tinv @ \
+        np.matmul(T, np.matmul(N_prime, Tinv))
+
+    M = MRB + MA  # system inertia matrix
+
     return M, N
-
- 
- 
-
-
