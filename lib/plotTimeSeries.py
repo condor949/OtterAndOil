@@ -19,6 +19,7 @@ from tools.randomPoints import color_generator
 
 legendSize = 10  # legend size
 figSize1 = [25, 13]  # figure1 size in cm
+bigFigSize1 = [50, 26]  # larger figure1 size in cm
 figSize2 = [25, 13]  # figure2 size in cm
 dpiValue = 150  # figure dpi value
 
@@ -159,10 +160,14 @@ def plotControls(simTime, simData, vehicle, figNo):
 
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
-def plot3D(swarmData, numDataPoints, FPS, filename, figNo):
+def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool):
     # Attaching 3D axis to the figure
-    fig = plt.figure(figNo, figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
-                     dpi=dpiValue)
+    if big_picture:
+        fig = plt.figure(figNo, figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
+                         dpi=dpiValue)
+    else:
+        fig = plt.figure(figNo, figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
+                         dpi=dpiValue)
     ax = p3.Axes3D(fig, auto_add_to_figure=False)
     fig.add_axes(ax)
 
