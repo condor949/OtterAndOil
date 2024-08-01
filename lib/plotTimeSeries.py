@@ -16,6 +16,7 @@ from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
 from tools.randomPoints import color_generator
+from functools import partial
 
 legendSize = 10  # legend size
 figSize1 = [25, 13]  # figure1 size in cm
@@ -183,14 +184,16 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool):
     plt.scatter([0], [0], [0], lw=6, c='g')
 
     # Animation function
-    def anim_function(num, dataSet, line):
-        line.set_data(dataSet[0:2, :num])
-        line.set_3d_properties(dataSet[2, :num])
-        # ax.view_init(elev=10.0, azim=-120.0)
-        ax.view_init(elev=90, azim=-90)
-        return line
+    def anim_function(num, plotData):
+        for line, dataSet in plotData.items():
+            line.set_data(dataSet[0:2, :num])
+            line.set_3d_properties(dataSet[2, :num])
+            # ax.view_init(elev=10.0, azim=-120.0)
+            ax.view_init(elev=90, azim=-90)
+        return plotData.keys()
 
     color_gen = color_generator()
+    plotData = {}
     for simData in swarmData:
         # State vectors
         x = simData[:, 0]
@@ -204,6 +207,7 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool):
         dataSet = np.array([N, E, -D])  # Down is negative z
         # Line/trajectory plot
         line = plt.plot(dataSet[0], dataSet[1], dataSet[2], lw=2, c=next(color_gen))[0]
+        plotData[line] = dataSet
 
     # Setting the axes properties
     ax.set_xlabel('X / East')
@@ -229,9 +233,8 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool):
 
     # Create the animation object
     ani = animation.FuncAnimation(fig,
-                                  anim_function,
+                                  partial(anim_function, plotData=plotData),
                                   frames=numDataPoints,
-                                  fargs=(dataSet, line),
                                   interval=200,
                                   blit=False,
                                   repeat=True)
