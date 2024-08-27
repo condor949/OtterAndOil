@@ -12,6 +12,7 @@ Author:     Thor I. Fossen
 import math
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
@@ -238,6 +239,12 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool):
                                   interval=200,
                                   blit=False,
                                   repeat=True)
-
     # Save the 3D animation as a gif file
-    ani.save(filename, writer=animation.PillowWriter(fps=FPS))
+    update_func = lambda _i, _n: progress_bar.update(1)
+    with tqdm(total=getattr(ani, "_save_count"), desc="Animation Writing") as progress_bar:
+        try:
+            writer = animation.FFMpegWriter(fps=FPS)
+        except:
+            writer = animation.PillowWriter(fps=FPS)
+
+        ani.save(filename, writer=writer, progress_callback=update_func)
