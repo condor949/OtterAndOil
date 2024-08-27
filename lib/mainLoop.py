@@ -8,7 +8,7 @@ Author:     Thor I. Fossen
 
 import numpy as np
 from .gnc import attitudeEuler
-
+from tqdm import tqdm
 
 ###############################################################################
 # Function printSimInfo(vehicle)
@@ -87,7 +87,7 @@ def simulate(y,x,N, sampleTime, vehicle):
     f_current = oil_intensity(0, 0)
 
     # Simulator for-loop
-    for i in range(0, N + 1):
+    for i in tqdm(range(0, N + 1), desc="Vehicle Simulation"):
 
         t = i * sampleTime  # simulation time
 
@@ -103,8 +103,7 @@ def simulate(y,x,N, sampleTime, vehicle):
         else:
             u_control = [0, 0]
 
-        # Store simulation data in simData
-        signals = np.append(np.append(np.append(eta, nu), u_control), u_actual)
+        signals = np.hstack((eta, nu, u_control, u_actual))
         simData = np.vstack([simData, signals])
 
         # Propagate vehicle and attitude dynamics
