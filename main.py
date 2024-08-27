@@ -18,6 +18,7 @@ from vehicles import *
 from lib import *
 from tools.dataStorage import *
 from tools.randomPoints import *
+from controllers import *
 
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
 numDataPoints = 500  # number of 3D data points
@@ -70,8 +71,8 @@ if __name__ == '__main__':
     ###############################################################################
     # printSimInfo()
 
-    vehicle = otter(V_current=args.V_current, beta_current=args.beta_current)
-    printVehicleinfo(vehicle, args.sampleTime, args.N)
+    vehicles = [otter(V_current=args.V_current, beta_current=args.beta_current) for _ in range(args.catamarans)]
+    # printVehicleinfo(vehicle, args.sampleTime, args.N)
 
     # plotVehicleStates(simTime, simData, 1)
     # plotControls(simTime, simData, vehicle, 2)
@@ -89,11 +90,13 @@ if __name__ == '__main__':
     for i in range(args.cycles):
         if args.catamarans > 1:
             start_points = generate_random_points(args.radius, args.catamarans)
+        controller = IntensityBasedController(starting_points=start_points, sample_time=args.sampleTime)
         timestamped_suffix: str = create_timestamped_suffix()
-        swarmData = []
-        for point in start_points:
-            [simTime, simData] = simulate(point[0], point[1], args.N, args.sampleTime, vehicle)
-            swarmData.append(simData)
+        # swarmData = []
+        # for point in start_points:
+        #     [simTime, simData] = simulate(point[0], point[1], args.N, args.sampleTime, vehicle)
+        #     swarmData.append(simData)
+        [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles, initial_positions=start_points, N=args.N, sampleTime=args.sampleTime, controller=controller)
         plot3D(swarmData, numDataPoints, FPS, os.path.join(create_timestamped_folder(suffix=timestamped_suffix),
                                                            create_timestamped_filename_ext(filename, timestamped_suffix,
                                                                                            "gif")), 1, args.big_picture, args.picture)
