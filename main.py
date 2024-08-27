@@ -40,8 +40,10 @@ if __name__ == '__main__':
     main_param = parser.add_argument_group('script parameters')
     main_param.add_argument('-cc', '--clean-cache', action='store_true', dest='clean_cache', default=False,
                             help='clean data directories')
-    main_param.add_argument('-B', '--big-picture', action='store_true', dest='big_picture', default=False,
+    main_param.add_argument('-big', '--big-picture', action='store_true', dest='big_picture', default=False,
                             help='set parameters of animation x2')
+    main_param.add_argument('-disanim', '--disable-animation', action='store_true', dest='not_animated', default=False,
+                           help='enable picture only mode, disable animation')
 
     sym_param = parser.add_argument_group('simulation parameters')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', type=int,
@@ -94,10 +96,10 @@ if __name__ == '__main__':
             swarmData.append(simData)
         plot3D(swarmData, numDataPoints, FPS, os.path.join(create_timestamped_folder(suffix=timestamped_suffix),
                                                            create_timestamped_filename_ext(filename, timestamped_suffix,
-                                                                                           "gif")), 1, args.big_picture)
+                                                                                           "gif")), 1, args.big_picture, args.not_animated)
         # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
         # print(f"Created new folder: {new_folder}")
         # print(timestamped_suffix)
-
+    print('Done!')
     # plt.show()
     # plt.close()
