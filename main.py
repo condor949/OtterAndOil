@@ -54,6 +54,8 @@ if __name__ == '__main__':
                            help='the radius of the catamaran starting position (m)')
     sym_param.add_argument('-NC', '--number-catamarans', metavar='catamarans', default=1, type=int, dest='catamarans',
                            help='the number of catamaran models participating in the experiment')
+    sym_param.add_argument('-pic', '--picture-only', action='store_true', dest='picture', default=False,
+                           help='enable picture only mode, disable animation')
 
     veh_params = parser.add_argument_group('catamaran parameters')
     veh_params.add_argument('-V', '--v-current', metavar='V_current', default=0, dest='V_current', type=float,
@@ -94,10 +96,10 @@ if __name__ == '__main__':
             swarmData.append(simData)
         plot3D(swarmData, numDataPoints, FPS, os.path.join(create_timestamped_folder(suffix=timestamped_suffix),
                                                            create_timestamped_filename_ext(filename, timestamped_suffix,
-                                                                                           "gif")), 1, args.big_picture)
+                                                                                           "gif")), 1, args.big_picture, args.picture)
         # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
         # print(f"Created new folder: {new_folder}")
         # print(timestamped_suffix)
-
+    print('Done!')
     # plt.show()
     # plt.close()

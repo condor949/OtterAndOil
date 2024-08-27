@@ -162,7 +162,7 @@ def plotControls(simTime, simData, vehicle, figNo):
 
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
-def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool):
+def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, not_animated: bool=False):
     # Attaching 3D axis to the figure
     if big_picture:
         fig = plt.figure(figNo, figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
@@ -231,6 +231,11 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool):
 
     # Title of plot
     ax.set_title('North-East-Down')
+
+    if not_animated:
+        plt.savefig(filename.replace("gif", "png"))
+        plt.show()
+        return
 
     # Create the animation object
     ani = animation.FuncAnimation(fig,
