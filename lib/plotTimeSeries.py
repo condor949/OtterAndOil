@@ -171,6 +171,7 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, no
         fig = plt.figure(figNo, figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
                          dpi=dpiValue)
     ax = p3.Axes3D(fig, auto_add_to_figure=False)
+    ax.view_init(elev=90, azim=-90)
     fig.add_axes(ax)
 
     # Plot target circle
@@ -182,7 +183,6 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, no
     y_circ = y0 + r * np.sin(alpha)
     z_circ = np.zeros(100)
     plt.plot(x_circ, y_circ, z_circ, lw=2, c='r')
-    plt.scatter([0], [0], [0], lw=6, c='g')
 
     # Animation function
     def anim_function(num, plotData):
@@ -190,7 +190,6 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, no
             line.set_data(dataSet[0:2, :num])
             line.set_3d_properties(dataSet[2, :num])
             # ax.view_init(elev=10.0, azim=-120.0)
-            ax.view_init(elev=90, azim=-90)
         return plotData.keys()
 
     color_gen = color_generator()
