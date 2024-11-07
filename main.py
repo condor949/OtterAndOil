@@ -14,6 +14,8 @@ import os
 import webbrowser
 import matplotlib.pyplot as plt
 import argparse
+
+from spaces import Gaussian3DSpace
 from vehicles import *
 from lib import *
 from tools.dataStorage import *
@@ -87,19 +89,33 @@ if __name__ == '__main__':
     if args.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
     start_points = [[0, 0]]
+    space = Gaussian3DSpace(grid_size=numDataPoints,shift_x=11,shift_y=11)
+    space.add_gaussian_peak(x0=0, y0=0, amplitude=30, sigma_x=3, sigma_y=3)
+    #space.add_gaussian_peak(x0=5, y0=19, amplitude=25, sigma_x=1.5, sigma_y=4)
+    # space.add_gaussian_peak(x0=-5, y0=-5, amplitude=3, sigma_x=3, sigma_y=2)
+    # space.add_gaussian_peak(x0=-3, y0=6, amplitude=6, sigma_x=1.5, sigma_y=1.5)
+    # space.add_gaussian_peak(x0=4, y0=-6, amplitude=4, sigma_x=1.8, sigma_y=1)
+    # space.drown(2990)
     for i in range(args.cycles):
         if args.catamarans > 1:
             start_points = generate_random_points(args.radius, args.catamarans)
-        controller = IntensityBasedController(starting_points=start_points, sample_time=args.sampleTime)
+        controller = IntensityBasedController(starting_points=start_points, sample_time=args.sampleTime, space=space)
         timestamped_suffix: str = create_timestamped_suffix()
+        timestamped_folder: str = create_timestamped_folder(suffix=timestamped_suffix)
         # swarmData = []
         # for point in start_points:
         #     [simTime, simData] = simulate(point[0], point[1], args.N, args.sampleTime, vehicle)
         #     swarmData.append(simData)
-        [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles, initial_positions=start_points, N=args.N, sampleTime=args.sampleTime, controller=controller)
-        plot3D(swarmData, numDataPoints, FPS, os.path.join(create_timestamped_folder(suffix=timestamped_suffix),
-                                                           create_timestamped_filename_ext(filename, timestamped_suffix,
-                                                                                           "gif")), 1, args.big_picture, args.not_animated)
+
+        [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles, initial_positions=start_points, N=args.N,
+                                                     sampleTime=args.sampleTime, controller=controller)
+        controller.create_intensity_graph(path=os.path.join(timestamped_folder,
+                                                            create_timestamped_filename_ext("intensity", timestamped_suffix,
+                                                                                            "png")))
+        plot3D(swarmData, numDataPoints, FPS, os.path.join(timestamped_folder,
+                                                            create_timestamped_filename_ext(filename, timestamped_suffix,
+                                                                                            "gif")),
+                1, args.big_picture, space, args.not_animated)
         # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
         # print(f"Created new folder: {new_folder}")
         # print(timestamped_suffix)
