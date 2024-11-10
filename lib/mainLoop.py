@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#TODO: delete file
 """
 Main simulation loop called by main.py.
 

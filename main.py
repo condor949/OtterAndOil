@@ -12,10 +12,11 @@ Author:     Thor I. Fossen
 """
 import os
 import webbrowser
-import matplotlib.pyplot as plt
+from random import sample
+
 import argparse
 
-from spaces import Gaussian3DSpace
+from spaces import *
 from vehicles import *
 from lib import *
 from tools.dataStorage import *
@@ -24,7 +25,7 @@ from controllers import *
 
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
 numDataPoints = 500  # number of 3D data points
-FPS = 10  # frames per second (animated GIF)
+FPS = 30  # frames per second (animated GIF)
 filename = '3D_animation'  # data file for animated GIF
 browser = 'chrome'  # browser for visualization of animated GIF
 
@@ -89,13 +90,15 @@ if __name__ == '__main__':
     if args.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
     start_points = [[0, 0]]
-    space = Gaussian3DSpace(grid_size=numDataPoints,shift_x=11,shift_y=11)
-    space.add_gaussian_peak(x0=0, y0=0, amplitude=30, sigma_x=3, sigma_y=3)
-    #space.add_gaussian_peak(x0=5, y0=19, amplitude=25, sigma_x=1.5, sigma_y=4)
-    # space.add_gaussian_peak(x0=-5, y0=-5, amplitude=3, sigma_x=3, sigma_y=2)
-    # space.add_gaussian_peak(x0=-3, y0=6, amplitude=6, sigma_x=1.5, sigma_y=1.5)
-    # space.add_gaussian_peak(x0=4, y0=-6, amplitude=4, sigma_x=1.8, sigma_y=1)
-    # space.drown(2990)
+    space = Gaussian3DSpace(grid_size=numDataPoints,shift_x=11,shift_y=11,shift_z=-10)
+    space.add_gaussian_peak(x0=0, y0=0, amplitude=30, sigma_x=6, sigma_y=6)
+    space.add_gaussian_peak(x0=5, y0=5, amplitude=25, sigma_x=1.5, sigma_y=4)
+    space.add_gaussian_peak(x0=-5, y0=-5, amplitude=20, sigma_x=3, sigma_y=2)
+    space.add_gaussian_peak(x0=-3, y0=6, amplitude=28, sigma_x=1.5, sigma_y=1.5)
+    space.add_gaussian_peak(x0=4, y0=-6, amplitude=12, sigma_x=1.8, sigma_y=1)
+    space.drown()
+    space.set_contour_points(plane_z=0, tol=1)
+    # print(space.contour_points)
     for i in range(args.cycles):
         if args.catamarans > 1:
             start_points = generate_random_points(args.radius, args.catamarans)
@@ -110,13 +113,24 @@ if __name__ == '__main__':
         [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles, initial_positions=start_points, N=args.N,
                                                      sampleTime=args.sampleTime, controller=controller)
         controller.create_intensity_graph(path=os.path.join(timestamped_folder,
-                                                            create_timestamped_filename_ext("intensity", timestamped_suffix,
+                                                            create_timestamped_filename_ext("intensity",
+                                                                                            timestamped_suffix,
                                                                                             "png")))
+        controller.create_sigma_graph(path=os.path.join(timestamped_folder,
+                                                            create_timestamped_filename_ext("sigmas",
+                                                                                            timestamped_suffix,
+                                                                                            "png")))
+        controller.create_quality_graph(path=os.path.join(timestamped_folder,
+                                                            create_timestamped_filename_ext("quality",
+                                                                                            timestamped_suffix,
+                                                                                            "png")),
+                                        sample_time=args.sampleTime)
         plot3D(swarmData, numDataPoints, FPS, os.path.join(timestamped_folder,
-                                                            create_timestamped_filename_ext(filename, timestamped_suffix,
-                                                                                            "gif")),
-                1, args.big_picture, space, args.not_animated)
-        # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
+                                                             create_timestamped_filename_ext(filename,
+                                                                                             timestamped_suffix,
+                                                                                             "gif")),
+                 1, args.big_picture, space, args.not_animated)
+        # # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
         # print(f"Created new folder: {new_folder}")
         # print(timestamped_suffix)
     print('Done!')
