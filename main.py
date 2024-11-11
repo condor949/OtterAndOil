@@ -1,27 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-main.py: Main program for the Python Vehicle Simulator, which can be used
+main.py: Main program for the Otter and Oil, which can be used
     to simulate and test guidance, navigation and control (GNC) systems.
-
-Reference: T. I. Fossen (2021). Handbook of Marine Craft Hydrodynamics and
-Motion Control. 2nd edition, John Wiley & Sons, Chichester, UK. 
-URL: https://www.fossen.biz/wiley  
-
-Author:     Thor I. Fossen
 """
 import os
-import webbrowser
-from random import sample
-
+import json
 import argparse
-
+import webbrowser
+from lib import *
 from spaces import *
 from vehicles import *
-from lib import *
+from controllers import *
 from tools.dataStorage import *
 from tools.randomPoints import *
-from controllers import *
+
 
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
 numDataPoints = 500  # number of 3D data points
@@ -35,6 +28,70 @@ browser = 'chrome'  # browser for visualization of animated GIF
 
 
 if __name__ == '__main__':
+
+    # Define the expected types and set initial values for each variable
+    clean_cache: bool = False
+    big_picture: bool = False
+    not_animated: bool = False
+    space_filename: str = ""
+    N: int = 0
+    SampleTime: float = 0.0
+    cycles: int = 0
+    radius: int = 0
+    catamarans: int = 0
+    V_current: float = 0.0
+    beta_current: float = 0.0
+
+
+    # Load the JSON file and read data into corresponding variables
+    def read_and_assign_parameters(input_filename):
+        global clean_cache, big_picture, not_animated, space_filename, N
+        global SampleTime, cycles, radius, catamarans, V_current, beta_current
+
+        with open(input_filename, 'r') as file:
+            data = json.load(file)
+
+        # Assign values with appropriate types
+        clean_cache = bool(data.get("clean_cache", clean_cache))
+        big_picture = bool(data.get("big_picture", big_picture))
+        not_animated = bool(data.get("not_animated", not_animated))
+        space_filename = str(data.get("space_filename", space_filename))
+        N = int(data.get("N", N))
+        SampleTime = float(data.get("SampleTime", SampleTime))
+        cycles = int(data.get("cycles", cycles))
+        radius = int(data.get("radius", radius))
+        catamarans = int(data.get("catamarans", catamarans))
+        V_current = float(data.get("V_current", V_current))
+        beta_current = float(data.get("beta_current", beta_current))
+
+
+    # Save the variables to a new JSON file
+    def save_parameters(output_filename):
+        parameters = {
+            "clean_cache": clean_cache,
+            "big_picture": big_picture,
+            "not_animated": not_animated,
+            "space_filename": space_filename,
+            "N": N,
+            "SampleTime": SampleTime,
+            "cycles": cycles,
+            "radius": radius,
+            "catamarans": catamarans,
+            "V_current": V_current,
+            "beta_current": beta_current
+        }
+
+        with open(output_filename, 'w') as file:
+            json.dump(parameters, file, indent=4)
+
+
+    # Example usage
+    input_filename = 'input.json'
+    output_filename = 'output.json'
+
+    read_and_assign_parameters(input_filename)
+    save_parameters(output_filename)
+
     parser = argparse.ArgumentParser(
         prog='Otter and Oil',
         description="The program performs a series of calculations of the catamaran's trajectory at the exit to the "
@@ -48,6 +105,7 @@ if __name__ == '__main__':
                             help='set parameters of animation x2')
     main_param.add_argument('-disanim', '--disable-animation', action='store_true', dest='not_animated', default=False,
                            help='enable picture only mode, disable animation')
+    main_param.add_argument('-space', '--space-file', dest='space_filename', help='')
 
     sym_param = parser.add_argument_group('simulation parameters')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', type=int,
