@@ -10,6 +10,7 @@ Author:     Thor I. Fossen
 """
 
 import math
+
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
@@ -18,6 +19,7 @@ import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
 from tools.randomPoints import color_generator
 from functools import partial
+from spaces import *
 
 legendSize = 10  # legend size
 figSize1 = [25, 13]  # figure1 size in cm
@@ -162,7 +164,7 @@ def plotControls(simTime, simData, vehicle, figNo):
 
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
-def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, not_animated: bool=False):
+def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, space: BaseSpace, not_animated: bool=False):
     # Attaching 3D axis to the figure
     if big_picture:
         fig = plt.figure(figNo, figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
@@ -174,15 +176,21 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, no
     ax.view_init(elev=90, azim=-90)
     fig.add_axes(ax)
 
+    # space.
+    plane_z = 0
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.7)
+    ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red')  # Intersection line
+
     # Plot target circle
-    alpha = np.linspace(0, 2 * np.pi, 100)
-    r = np.sqrt(30)
-    x0 = 10
-    y0 = 10
-    x_circ = x0 + r * np.cos(alpha)
-    y_circ = y0 + r * np.sin(alpha)
-    z_circ = np.zeros(100)
-    plt.plot(x_circ, y_circ, z_circ, lw=2, c='r')
+    # alpha = np.linspace(0, 2 * np.pi, 100)
+    # r = np.sqrt(30)
+    # x0 = 10
+    # y0 = 10
+    # x_circ = x0 + r * np.cos(alpha)
+    # y_circ = y0 + r * np.sin(alpha)
+    # z_circ = np.zeros(100)
+    # plt.plot(x_circ, y_circ, z_circ, lw=2, c='r')
 
     # Animation function
     def anim_function(num, plotData):
@@ -222,8 +230,8 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, no
     # Plot 2D surface for z = 0
     [x_min, x_max] = ax.get_xlim()
     [y_min, y_max] = ax.get_ylim()
-    x_grid = np.arange(x_min - 20, x_max + 20)
-    y_grid = np.arange(y_min - 20, y_max + 20)
+    x_grid = np.arange(x_min - 10, x_max + 10)
+    y_grid = np.arange(y_min - 10, y_max + 10)
     [xx, yy] = np.meshgrid(x_grid, y_grid)
     zz = 0 * xx
     ax.plot_surface(xx, yy, zz, alpha=0.3)
