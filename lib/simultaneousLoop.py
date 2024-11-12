@@ -6,7 +6,7 @@ from tqdm import tqdm
 from controllers import BaseController
 
 
-def simultaneous_simulate(vehicles: Sequence, initial_positions: np.array, N: int, sampleTime: float, controller: BaseController):
+def simultaneous_simulate(vehicles: Sequence, initial_positions: np.array, N: int, sample_time: float, controller: BaseController):
     DOF = 6  # degrees of freedom
     t = 0  # initial simulation time
 
@@ -40,21 +40,21 @@ def simultaneous_simulate(vehicles: Sequence, initial_positions: np.array, N: in
             u_actual = m_u_actual[k]
             u_control = m_u_control[k]
 
-            t = i * sampleTime  # simulation time
+            t = i * sample_time  # simulation time
 
             # Store simulation data in simData
             signals = np.hstack((eta, nu, u_control, u_actual))
             sim_data[k][i, :] = signals
 
             # Propagate vehicle and attitude dynamics
-            [nu, u_actual] = vehicles[k].dynamics(eta, nu, u_actual, u_control, sampleTime)
-            eta = attitudeEuler(eta, nu, sampleTime)
+            [nu, u_actual] = vehicles[k].dynamics(eta, nu, u_actual, u_control, sample_time)
+            eta = attitudeEuler(eta, nu, sample_time)
 
             m_eta[k] = eta
             m_nu[k] = nu
             m_u_actual[k] = u_actual
 
     # Store simulation time vector
-    sim_time = np.arange(start=0, stop=t + sampleTime, step=sampleTime)[:, None]
+    sim_time = np.arange(start=0, stop=t + sample_time, step=sample_time)[:, None]
 
     return sim_time, sim_data
