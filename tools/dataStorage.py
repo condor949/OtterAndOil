@@ -1,6 +1,7 @@
 import os
 import datetime
 import shutil
+import json
 
 
 def create_timestamped_suffix() -> str:
@@ -72,3 +73,78 @@ def clean_data():
         print(f"Deleted 'data' folder at: {data_folder_path}")
     else:
         print(f"'data' folder does not exist at: {data_folder_path}")
+
+
+class Arguments:
+    def __init__(self,
+                 clean_cache: bool,
+                 big_picture: bool,
+                 not_animated: bool,
+                 space_filename: str,
+                 N: int,
+                 sample_time: float,
+                 cycles: int,
+                 radius: int,
+                 catamarans: int,
+                 grid_size: int,
+                 FPS: int,
+                 V_current: float,
+                 beta_current: float):
+        self.clean_cache = clean_cache
+        self.big_picture = big_picture
+        self.not_animated = not_animated
+        self.space_filename = space_filename
+        self.N = N
+        self.sample_time = sample_time
+        self.cycles = cycles
+        self.radius = radius
+        self.catamarans = catamarans
+        self.grid_size = grid_size
+        self.FPS = FPS
+        self.V_current = V_current
+        self.beta_current = beta_current
+
+    def get_json_data(self):
+        return {
+                    "clean_cache": self.clean_cache,
+                    "big_picture": self.big_picture,
+                    "not_animated": self.not_animated,
+                    "space_filename": self.space_filename,
+                    "N": self.N,
+                    "sample_time": self.sample_time,
+                    "cycles": self.cycles,
+                    "radius": self.radius,
+                    "catamarans": self.catamarans,
+                    "grid_size": self.grid_size,
+                    "FPS": self.FPS,
+                    "V_current": self.V_current,
+                    "beta_current": self.beta_current
+                }
+
+
+def read_and_assign_parameters(input_filename):
+    with open(input_filename, 'r') as file:
+        data = json.load(file)
+
+    # Assign values with appropriate types
+    return Arguments(clean_cache = bool(data['clean_cache']),
+                     big_picture = bool(data['big_picture']),
+                     not_animated = bool(data['not_animated']),
+                     space_filename = str(data['space_filename']),
+                     N = int(data['N']),
+                     sample_time = float(data['sample_time']),
+                     cycles = int(data['cycles']),
+                     radius = int(data['radius']),
+                     catamarans = int(data['catamarans']),
+                     grid_size=int(data['grid_size']),
+                     FPS=int(data['FPS']),
+                     V_current = float(data['V_current']),
+                     beta_current = float(data['beta_current']))
+
+
+# Save the variables to a new JSON file
+def save_parameters(output_filename, arguments: Arguments):
+    with open(output_filename, 'w') as saved_config:
+        json.dump(arguments.get_json_data(), saved_config, indent=4)
+
+

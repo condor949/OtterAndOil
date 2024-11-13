@@ -1,23 +1,11 @@
-from typing import Sequence
-
-from scipy.interpolate import griddata, LinearNDInterpolator
-
-from spaces import BaseSpace
 import numpy as np
+from typing import Sequence
+from spaces import BaseSpace, Peak
 import matplotlib.pyplot as plt
 
 
-class Peak:
-    def __init__(self, x0, y0, amplitude, sigma_x, sigma_y):
-        self.x0=x0
-        self.y0=y0
-        self.amplitude=amplitude
-        self.sigma_x=sigma_x
-        self.sigma_y=sigma_y
-
 class Gaussian3DSpace(BaseSpace):
-
-    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_x=0, shift_y=0, shift_z=0):
+    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_x=0, shift_y=0, shift_z=0, space_filename=""):
         """
         Initialize the 3D Gaussian space.
 
@@ -28,36 +16,19 @@ class Gaussian3DSpace(BaseSpace):
         shift_x (int): Shift of all points along the x-axis.
         shift_y (int): Shift of all points along the y-axis.
         """
-        super().__init__()
-        self.x = np.linspace(*x_range, grid_size)
-        self.y = np.linspace(*y_range, grid_size)
-        self.X, self.Y = np.meshgrid(self.x, self.y)
-        self.Z = np.zeros_like(self.X)  # Start with a flat surface
-        self.shift_x = shift_x
-        self.shift_y = shift_y
-        self.shift_z = shift_z
-        self.interp = None
-        self.peaks = list()
-        self.contour_points = list()
-
-    # def add_gaussian_peak(self, x0, y0, amplitude, sigma_x, sigma_y):
-    #     peak = amplitude - ((self.X - x0 - self.shift_x) ** 2 / (2 * sigma_x) + (self.Y - y0 - self.shift_y) ** 2 / (2 * sigma_y))
-    #     self.Z += peak
-    def add_gaussian_peak(self, x0, y0, amplitude, sigma_x, sigma_y):
+        super().__init__(x_range, y_range, grid_size, shift_x, shift_y, shift_z, space_filename)
         """
-        Add a Gaussian peak to the Z surface.
+            Add a Gaussian peak to the Z surface.
 
-        Parameters:
-        x0, y0 (float): Center of the Gaussian peak.
-        amplitude (float): Height of the Gaussian peak.
-        sigma_x, sigma_y (float): Spread of the Gaussian in x and y directions.
+            Parameters:
+            x0, y0 (float): Center of the Gaussian peak.
+            amplitude (float): Height of the Gaussian peak.
+            sigma_x, sigma_y (float): Spread of the Gaussian in x and y directions.
         """
-        self.peaks.append(Peak(x0, y0, amplitude, sigma_x, sigma_y))
-        print(self.peaks)
-        peak = amplitude * np.exp(-((self.X - x0 - self.shift_x) ** 2 / (2 * sigma_x ** 2) +
-                                    (self.Y - y0 - self.shift_y) ** 2 / (2 * sigma_y ** 2)))
-        self.Z += peak  # Add peak to the current Z surface
-        # self.interp = LinearNDInterpolator(list(zip(self.X.flatten(), self.Y.flatten())),self.Z.flatten())
+        for peak in self.peaks:
+            self.Z += peak.amplitude * np.exp(-((self.X - peak.x0 - self.shift_x) ** 2 / (2 * peak.sigma_x ** 2) +
+                                                (self.Y - peak.y0 - self.shift_y) ** 2 / (2 * peak.sigma_y ** 2)))
+        self.Z += self.shift_z
 
     def get_intensity(self, x_current, y_current):
         """
@@ -119,7 +90,7 @@ class Gaussian3DSpace(BaseSpace):
         # return zed[0][0][0]
         # return self.interp([x_current], [y_current])[0]
 
-    def set_contour_points(self, plane_z, tol=1e-8):
+    def set_contour_points(self, plane_z=0, tol=1e-8):
         cont = []
         for i in range(len(self.X)):
             for j in range(len(self.X[i])):
@@ -129,11 +100,6 @@ class Gaussian3DSpace(BaseSpace):
 
     def get_nearest_contour_point_norm(self, x, y):
         return min([(xc-x)**2+(yc-y)**2 for xc, yc in self.contour_points])**0.5
-
-    def drown(self):
-        self.Z+=self.shift_z
-
-        # self.interp = LinearNDInterpolator(list(zip(self.X.flatten(), self.Y.flatten())),self.Z.flatten())
 
     def plot_surface(self, path, title="3D Gaussian Surface"):
         """
@@ -148,12 +114,3 @@ class Gaussian3DSpace(BaseSpace):
         plt.title(title)
         plt.savefig(path)
         plt.close()
-
-    def get_X(self) -> Sequence:
-        return self.X
-
-    def get_Y(self) -> Sequence:
-        return self.Y
-
-    def get_Z(self) -> Sequence:
-        return self.Z

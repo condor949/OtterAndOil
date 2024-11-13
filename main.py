@@ -5,7 +5,6 @@ main.py: Main program for the Otter and Oil, which can be used
     to simulate and test guidance, navigation and control (GNC) systems.
 """
 import os
-import json
 import argparse
 import webbrowser
 from lib import *
@@ -19,80 +18,10 @@ from tools.randomPoints import *
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
 browser = 'chrome'  # browser for visualization of animated GIF
 
-class Arguments:
-    def __init__(self,
-                 clean_cache: bool,
-                 big_picture: bool,
-                 not_animated: bool,
-                 space_filename: str,
-                 N: int,
-                 sample_time: float,
-                 cycles: int,
-                 radius: int,
-                 catamarans: int,
-                 grid_size: int,
-                 FPS: int,
-                 V_current: float,
-                 beta_current: float):
-        self.clean_cache = clean_cache
-        self.big_picture = big_picture
-        self.not_animated = not_animated
-        self.space_filename = space_filename
-        self.N = N
-        self.sample_time = sample_time
-        self.cycles = cycles
-        self.radius = radius
-        self.catamarans = catamarans
-        self.grid_size = grid_size
-        self.FPS = FPS
-        self.V_current = V_current
-        self.beta_current = beta_current
 
 ###############################################################################
-# Main simulation loop 
+# Main simulation loop
 ###############################################################################
-def read_and_assign_parameters(input_filename):
-    with open(input_filename, 'r') as file:
-        data = json.load(file)
-
-    # Assign values with appropriate types
-    return Arguments(clean_cache = bool(data['clean_cache']),
-                     big_picture = bool(data['big_picture']),
-                     not_animated = bool(data['not_animated']),
-                     space_filename = str(data['space_filename']),
-                     N = int(data['N']),
-                     sample_time = float(data['sample_time']),
-                     cycles = int(data['cycles']),
-                     radius = int(data['radius']),
-                     catamarans = int(data['catamarans']),
-                     grid_size=int(data['grid_size']),
-                     FPS=int(data['FPS']),
-                     V_current = float(data['V_current']),
-                     beta_current = float(data['beta_current']))
-
-
-# Save the variables to a new JSON file
-def save_parameters(output_filename, arguments: Arguments):
-    json_data = {
-        "clean_cache": arguments.clean_cache,
-        "big_picture": arguments.big_picture,
-        "not_animated": arguments.not_animated,
-        "space_filename": arguments.space_filename,
-        "N": arguments.N,
-        "sample_time": arguments.sample_time,
-        "cycles": arguments.cycles,
-        "radius": arguments.radius,
-        "catamarans": arguments.catamarans,
-        "grid_size": arguments.grid_size,
-        "FPS": arguments.FPS,
-        "V_current": arguments.V_current,
-        "beta_current": arguments.beta_current
-    }
-
-    with open(output_filename, 'w') as saved_config:
-        json.dump(json_data, saved_config, indent=4)
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog='Otter and Oil',
@@ -108,7 +37,7 @@ if __name__ == '__main__':
     main_param.add_argument('-disanim', '--disable-animation', action='store_true', dest='not_animated', default=False,
                             help='enable picture only mode, disable animation')
     main_param.add_argument('-space', '--space-file', dest='space_filename', default='./space.json', help='')
-    main_param.add_argument('-c', '--config-file', dest='config_filename', default='./config.json', help='')
+    main_param.add_argument('-c', '--config-file', dest='config_filename', default='', help='')
 
     sym_param = parser.add_argument_group('simulation parameters')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', type=int,
@@ -169,13 +98,13 @@ if __name__ == '__main__':
     if arguments.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
     start_points = [[0, 0]]
-    space = Gaussian3DSpace(grid_size=arguments.grid_size,shift_x=11,shift_y=11,shift_z=-10)
-    space.add_gaussian_peak(x0=0, y0=0, amplitude=30, sigma_x=6, sigma_y=6)
-    space.add_gaussian_peak(x0=5, y0=5, amplitude=25, sigma_x=1.5, sigma_y=4)
-    space.add_gaussian_peak(x0=-5, y0=-5, amplitude=20, sigma_x=3, sigma_y=2)
-    space.add_gaussian_peak(x0=-3, y0=6, amplitude=28, sigma_x=1.5, sigma_y=1.5)
-    space.add_gaussian_peak(x0=4, y0=-6, amplitude=12, sigma_x=1.8, sigma_y=1)
-    space.drown()
+    space = Gaussian3DSpace(grid_size=arguments.grid_size,
+                            shift_x=11,
+                            shift_y=11,
+                            shift_z=-10,
+                            space_filename=args.space_filename)
+
+    #space.drown()
     space.set_contour_points(plane_z=0, tol=1)
     # print(space.contour_points)
     for i in range(arguments.cycles):
@@ -196,19 +125,24 @@ if __name__ == '__main__':
                                                                                             timestamped_suffix,
                                                                                             "png")))
         controller.create_sigma_graph(path=os.path.join(timestamped_folder,
-                                                            create_timestamped_filename_ext("sigmas",
-                                                                                            timestamped_suffix,
-                                                                                            "png")))
+                                                        create_timestamped_filename_ext("sigmas",
+                                                                                        timestamped_suffix,
+                                                                                        "png")))
         controller.create_quality_graph(path=os.path.join(timestamped_folder,
-                                                            create_timestamped_filename_ext("quality",
-                                                                                            timestamped_suffix,
-                                                                                            "png")),
+                                                          create_timestamped_filename_ext("quality",
+                                                                                          timestamped_suffix,
+                                                                                          "png")),
                                         sample_time=arguments.sample_time)
         plot3D(swarmData, arguments.grid_size, arguments.FPS, os.path.join(timestamped_folder,
-                                                             create_timestamped_filename_ext('3D_animation',
-                                                                                             timestamped_suffix,
-                                                                                             "gif")),
-                 1, arguments.big_picture, space, arguments.not_animated)
+                                                                           create_timestamped_filename_ext('3D_animation',
+                                                                                                           timestamped_suffix,
+                                                                                                           "gif")),
+               1, arguments.big_picture, space, arguments.not_animated)
+        save_parameters(output_filename=os.path.join(timestamped_folder,
+                                                     create_timestamped_filename_ext("config",
+                                                                                     timestamped_suffix,
+                                                                                     "json")),
+                        arguments=arguments)
         # # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
         # print(f"Created new folder: {new_folder}")
         # print(timestamped_suffix)
