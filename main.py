@@ -9,6 +9,7 @@ import argparse
 import webbrowser
 from lib import *
 from spaces import *
+from spaces.ParabolicSpace import Parabolic3DSpace
 from vehicles import *
 from controllers import *
 from tools.dataStorage import *
@@ -37,9 +38,13 @@ if __name__ == '__main__':
     main_param.add_argument('-disanim', '--disable-animation', action='store_true', dest='not_animated', default=False,
                             help='enable picture only mode, disable animation')
     main_param.add_argument('-space', '--space-file', dest='space_filename', default='./space.json', help='')
+    # do not store in config file
     main_param.add_argument('-c', '--config-file', dest='config_filename', default='', help='')
+    main_param.add_argument('--name', dest='experiment_name', default='', help='')
 
     sym_param = parser.add_argument_group('simulation parameters')
+    sym_param.add_argument('-sN', '--space-name', metavar='space_name', default='', dest='space_name', type=str,
+                           help='')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', type=int,
                            help='number of samples')
     sym_param.add_argument('-sT', '--sample-time', metavar='sample_time', default=0.02, dest='sample_time', type=float,
@@ -65,6 +70,7 @@ if __name__ == '__main__':
                               big_picture = args.big_picture,
                               not_animated = args.not_animated,
                               space_filename = args.space_filename,
+                              space_name= args.space_name,
                               N = args.N,
                               sample_time = args.sample_time,
                               cycles = args.cycles,
@@ -98,15 +104,20 @@ if __name__ == '__main__':
     if arguments.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
     start_points = [[0, 0]]
-    space = Gaussian3DSpace(grid_size=arguments.grid_size,
-                            shift_x=11,
-                            shift_y=11,
-                            shift_z=-10,
-                            space_filename=args.space_filename)
+    if arguments.space_name == 'parabolic':
+        space = Parabolic3DSpace(grid_size=arguments.grid_size,
+                                shift_x=11,
+                                shift_y=11,
+                                shift_z=-10,
+                                space_filename=args.space_filename)
+    else:
+        space = Gaussian3DSpace(grid_size=arguments.grid_size,
+                                shift_x=11,
+                                shift_y=11,
+                                shift_z=-10,
+                                space_filename=args.space_filename)
 
-    #space.drown()
-    space.set_contour_points(plane_z=0, tol=1)
-    # print(space.contour_points)
+    space.set_contour_points(tol=1)
     for i in range(arguments.cycles):
         if arguments.catamarans > 1:
             start_points = generate_random_points(arguments.radius, arguments.catamarans)
@@ -143,6 +154,10 @@ if __name__ == '__main__':
                                                                                      timestamped_suffix,
                                                                                      "json")),
                         arguments=arguments)
+        space.plot_surface(path=os.path.join(timestamped_folder,
+                                                          create_timestamped_filename_ext("space",
+                                                                                          timestamped_suffix,
+                                                                                          "png")))
         # # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
         # print(f"Created new folder: {new_folder}")
         # print(timestamped_suffix)

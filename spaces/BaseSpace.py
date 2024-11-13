@@ -44,6 +44,17 @@ class BaseSpace(ABC):
                 data = json.load(file)
                 self.peaks = [Peak(**item) for item in data]
 
+    def set_contour_points(self, plane_z=0, tol=1e-8):
+        cont = []
+        for i in range(len(self.X)):
+            for j in range(len(self.X[i])):
+                if abs(self.Z[i, j] - plane_z) < tol:
+                    cont.append((self.X[i, j], self.Y[i, j]))
+        self.contour_points = cont
+
+    def get_nearest_contour_point_norm(self, x, y):
+        return min([(xc-x)**2+(yc-y)**2 for xc, yc in self.contour_points])**0.5
+
     def get_intensity(self, x_current, y_current):
         pass
 

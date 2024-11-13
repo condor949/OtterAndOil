@@ -81,6 +81,7 @@ class Arguments:
                  big_picture: bool,
                  not_animated: bool,
                  space_filename: str,
+                 space_name: str,
                  N: int,
                  sample_time: float,
                  cycles: int,
@@ -94,6 +95,7 @@ class Arguments:
         self.big_picture = big_picture
         self.not_animated = not_animated
         self.space_filename = space_filename
+        self.space_name = space_name
         self.N = N
         self.sample_time = sample_time
         self.cycles = cycles
@@ -110,6 +112,7 @@ class Arguments:
                     "big_picture": self.big_picture,
                     "not_animated": self.not_animated,
                     "space_filename": self.space_filename,
+                    "space_name": self.space_name,
                     "N": self.N,
                     "sample_time": self.sample_time,
                     "cycles": self.cycles,
@@ -131,6 +134,7 @@ def read_and_assign_parameters(input_filename):
                      big_picture = bool(data['big_picture']),
                      not_animated = bool(data['not_animated']),
                      space_filename = str(data['space_filename']),
+                     space_name = str(data['space_name']),
                      N = int(data['N']),
                      sample_time = float(data['sample_time']),
                      cycles = int(data['cycles']),

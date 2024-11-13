@@ -1,0 +1,16 @@
+{
+    "clean_cache": false,
+    "big_picture": false,
+    "not_animated": false,
+    "space_filename": "space.json",
+    "space_name": "parabolic",
+    "N": 20000,
+    "sample_time": 0.005,
+    "cycles": 1,
+    "radius": 1,
+    "catamarans": 1,
+    "grid_size": 500,
+    "FPS": 30,
+    "V_current": 0,
+    "beta_current": 30.0
+}
