@@ -40,10 +40,9 @@ if __name__ == '__main__':
     main_param.add_argument('-space', '--space-file', dest='space_filename', default='./space.json', help='')
     # do not store in config file
     main_param.add_argument('-c', '--config-file', dest='config_filename', default='', help='')
-    main_param.add_argument('--name', dest='experiment_name', default='', help='')
 
     sym_param = parser.add_argument_group('simulation parameters')
-    sym_param.add_argument('-sN', '--space-name', metavar='space_name', default='', dest='space_name', type=str,
+    sym_param.add_argument('--space-type', metavar='space_type', default='', dest='space_type', type=str,
                            help='')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', type=int,
                            help='number of samples')
@@ -70,7 +69,7 @@ if __name__ == '__main__':
                               big_picture = args.big_picture,
                               not_animated = args.not_animated,
                               space_filename = args.space_filename,
-                              space_name= args.space_name,
+                              space_type= args.space_type,
                               N = args.N,
                               sample_time = args.sample_time,
                               cycles = args.cycles,
@@ -103,17 +102,17 @@ if __name__ == '__main__':
         clean_data()
     if arguments.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
-    start_points = [[0, 0]]
-    if arguments.space_name == 'parabolic':
+    start_points = [[-10, -10]]
+    if arguments.space_type == 'parabolic':
         space = Parabolic3DSpace(grid_size=arguments.grid_size,
-                                shift_x=11,
-                                shift_y=11,
+                                shift_x=0,
+                                shift_y=0,
                                 shift_z=-10,
                                 space_filename=args.space_filename)
     else:
         space = Gaussian3DSpace(grid_size=arguments.grid_size,
-                                shift_x=11,
-                                shift_y=11,
+                                shift_x=0,
+                                shift_y=0,
                                 shift_z=-10,
                                 space_filename=args.space_filename)
 
@@ -121,46 +120,31 @@ if __name__ == '__main__':
     for i in range(arguments.cycles):
         if arguments.catamarans > 1:
             start_points = generate_random_points(arguments.radius, arguments.catamarans)
-        controller = IntensityBasedController(starting_points=start_points, sample_time=arguments.sample_time, space=space)
         timestamped_suffix: str = create_timestamped_suffix()
-        timestamped_folder: str = create_timestamped_folder(suffix=timestamped_suffix)
-        # swarmData = []
-        # for point in start_points:
-        #     [simTime, simData] = simulate(point[0], point[1], args.N, args.sample_time, vehicle)
-        #     swarmData.append(simData)
+        timestamped_folder: str = create_timestamped_folder(arguments.space_type, f"s{i + 1}",
+                                                            timestamped_suffix=timestamped_suffix)
+        controller = IntensityBasedController(timestamped_folder=timestamped_folder,
+                                              timestamped_suffix=timestamped_suffix,
+                                              starting_points=start_points,
+                                              sample_time=arguments.sample_time,
+                                              space=space)
 
-        [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles, initial_positions=start_points, N=args.N,
+        [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles, initial_positions=start_points, N=arguments.N,
                                                      sample_time=arguments.sample_time, controller=controller)
-        controller.create_intensity_graph(path=os.path.join(timestamped_folder,
-                                                            create_timestamped_filename_ext("intensity",
-                                                                                            timestamped_suffix,
-                                                                                            "png")))
-        controller.create_sigma_graph(path=os.path.join(timestamped_folder,
-                                                        create_timestamped_filename_ext("sigmas",
-                                                                                        timestamped_suffix,
-                                                                                        "png")))
-        controller.create_quality_graph(path=os.path.join(timestamped_folder,
-                                                          create_timestamped_filename_ext("quality",
-                                                                                          timestamped_suffix,
-                                                                                          "png")),
-                                        sample_time=arguments.sample_time)
-        plot3D(swarmData, arguments.grid_size, arguments.FPS, os.path.join(timestamped_folder,
-                                                                           create_timestamped_filename_ext('3D_animation',
-                                                                                                           timestamped_suffix,
-                                                                                                           "gif")),
+        controller.plotting_intensity()
+        controller.plotting_sigma()
+        controller.plotting_quality(sample_time=arguments.sample_time)
+        plot3D(swarmData,
+               arguments.grid_size,
+               arguments.FPS,
+               os.path.join(timestamped_folder,
+                            create_timestamped_filename_ext('3D_animation',
+                                                            timestamped_suffix,
+                                                            "gif")),
                1, arguments.big_picture, space, arguments.not_animated)
-        save_parameters(output_filename=os.path.join(timestamped_folder,
-                                                     create_timestamped_filename_ext("config",
-                                                                                     timestamped_suffix,
-                                                                                     "json")),
-                        arguments=arguments)
-        space.plot_surface(path=os.path.join(timestamped_folder,
-                                                          create_timestamped_filename_ext("space",
-                                                                                          timestamped_suffix,
-                                                                                          "png")))
-        # # new_folder = create_timestamped_folder(suffix=timestamped_suffix)
-        # print(f"Created new folder: {new_folder}")
-        # print(timestamped_suffix)
+        space.plotting_surface(timestamped_folder, timestamped_suffix)
+
+        arguments.store_in_config(folder=timestamped_folder,suffix=timestamped_suffix)
+        space.store_in_config(timestamped_folder, timestamped_suffix)
+
     print('Done!')
-    # plt.show()
-    # plt.close()

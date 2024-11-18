@@ -1,6 +1,7 @@
-import json
 import numpy as np
 from abc import ABC
+import matplotlib as plt
+from tools.dataStorage import *
 from collections.abc import Sequence
 
 
@@ -15,6 +16,15 @@ class Peak:
     def __repr__(self):
         return (f"Peak(x0={self.x0}, y0={self.y0}, amplitude={self.amplitude}, "
                 f"sigma_x={self.sigma_x}, sigma_y={self.sigma_y})")
+
+    def get_json_data(self):
+        return {
+                    "x0": self.x0,
+                    "y0": self.y0,
+                    "amplitude": self.amplitude,
+                    "sigma_x": self.sigma_x,
+                    "sigma_y": self.sigma_y
+               }
 
 
 class BaseSpace(ABC):
@@ -43,6 +53,7 @@ class BaseSpace(ABC):
             with open(space_filename, 'r') as file:
                 data = json.load(file)
                 self.peaks = [Peak(**item) for item in data]
+        self.type=""
 
     def set_contour_points(self, plane_z=0, tol=1e-8):
         cont = []
@@ -58,8 +69,35 @@ class BaseSpace(ABC):
     def get_intensity(self, x_current, y_current):
         pass
 
-    def plot_surface(self, path, title):
-        pass
+    def plotting_surface(self, folder, suffix):
+        """
+        Plot the 3D surface with all peaks.
+        """
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.plot_surface(self.X, self.Y, self.Z, cmap='viridis')
+        ax.set_xlabel('X-axis')
+        ax.set_ylabel('Y-axis')
+        ax.set_zlabel('Z-axis')
+        plt.title(f"3D {self.type} surface")
+        plt.savefig(os.path.join(folder,
+                                 create_timestamped_filename_ext(self.type,
+                                                                 suffix,
+                                                                 "png")))
+        plt.close()
+
+    def get_json_data(self):
+        json_data = list()
+        for peak in self.peaks:
+            json_data.append(peak.get_json_data())
+        return json_data
+
+    def store_in_config(self, folder, suffix):
+        with open(os.path.join(folder,
+                               create_timestamped_filename_ext(self.type,
+                                                               suffix,
+                                                               "json")), 'w') as config:
+            json.dump(self.get_json_data(), config, indent=4)
 
     def get_X(self) -> Sequence:
         return self.X

@@ -1,7 +1,5 @@
 import numpy as np
-from typing import Sequence
-from spaces import BaseSpace, Peak
-import matplotlib.pyplot as plt
+from spaces import BaseSpace
 
 
 class Parabolic3DSpace(BaseSpace):
@@ -36,6 +34,7 @@ class Parabolic3DSpace(BaseSpace):
                 if self.Z[i, j] < 0:
                     self.Z[i,j] = 0
         self.Z += self.shift_z
+        self.type = "parabolic"
 
     def get_intensity(self, x_current, y_current):
         """
@@ -49,67 +48,10 @@ class Parabolic3DSpace(BaseSpace):
         """
         intensity: float = 0
         for peak in self.peaks:
-            intensity += (((peak.amplitude -((x_current - peak.x0 - self.shift_x) ** 2 / (2 * peak.sigma_x ** 2) +
+            intensity += ((peak.amplitude -((x_current - peak.x0 - self.shift_x) ** 2 / (2 * peak.sigma_x ** 2) +
                                              (y_current - peak.y0 - self.shift_y) ** 2 / (2 * peak.sigma_y ** 2))) *
                            np.exp(-((x_current - peak.x0 - self.shift_x) ** 2 / (2 * peak.sigma_x ** 2) +
-                                    (y_current - peak.y0 - self.shift_y) ** 2 / (2 * peak.sigma_y ** 2)))))
+                                    (y_current - peak.y0 - self.shift_y) ** 2 / (2 * peak.sigma_y ** 2))))
         #print(intensity)
         intensity += self.shift_z
         return intensity
-        # x01 = 0
-        # y01 = 0
-        # amplitude1 = 30
-        # sigma_x1 = 6
-        # sigma_y1 = 6
-        # x02 = 5
-        # y02 = 5
-        # amplitude2 = 25
-        # sigma_x2 = 1.5
-        # sigma_y2 = 4
-        # x03 = -5
-        # y03 = -5
-        # amplitude3 = 20
-        # sigma_x3 = 3
-        # sigma_y3 = 2
-        # x04 = -3
-        # y04 = 6
-        # amplitude4 = 28
-        # sigma_x4 = 1.5
-        # sigma_y4 = 1.5
-        # x05 = 4
-        # y05 = -6
-        # amplitude5 = 12
-        # sigma_x5 = 1.8
-        # sigma_y5 = 1
-        # return (amplitude1 * np.exp(-((x_current - x01 - self.shift_x) ** 2 / (2 * sigma_x1 ** 2) +
-        #                             (y_current - y01 - self.shift_y) ** 2 / (2 * sigma_y1 ** 2))) +
-        #         amplitude2 * np.exp(-((x_current - x02 - self.shift_x) ** 2 / (2 * sigma_x2 ** 2) +
-        #                             (y_current - y02 - self.shift_y) ** 2 / (2 * sigma_y2 ** 2))) +
-        #         amplitude3 * np.exp(-((x_current - x03 - self.shift_x) ** 2 / (2 * sigma_x3 ** 2) +
-        #                             (y_current - y03 - self.shift_y) ** 2 / (2 * sigma_y3 ** 2))) +
-        #         amplitude4 * np.exp(-((x_current - x04 - self.shift_x) ** 2 / (2 * sigma_x4 ** 2) +
-        #                             (y_current - y04 - self.shift_y) ** 2 / (2 * sigma_y4 ** 2))) +
-        #         amplitude5 * np.exp(-((x_current - x05 - self.shift_x) ** 2 / (2 * sigma_x5 ** 2) +
-        #                             (y_current - y05 - self.shift_y) ** 2 / (2 * sigma_y5 ** 2))) - 10)
-        # idx_x = (np.abs(self.x - x_current)).argmin()
-        # idx_y = (np.abs(self.y - y_current)).argmin()
-        # print(self.Z[idx_x,idx_y])
-        # return self.Z[idx_x, idx_y]
-        # zed = griddata([x_current, y_current], self.Z, (self.X, self.Y), method='linear')
-        # print(zed)
-        # return zed[0][0][0]
-        # return self.interp([x_current], [y_current])[0]
-
-    def plot_surface(self, path, title="3D Parabolic Surface"):
-        """
-        Plot the 3D Parabolic surface with all peaks.
-        """
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        ax.plot_surface(self.X, self.Y, self.Z, cmap='viridis')
-        ax.set_xlabel('X-axis')
-        ax.set_ylabel('Y-axis')
-        ax.set_zlabel('Z-axis')
-        plt.title(title)
-        plt.savefig(path)
-        plt.close()

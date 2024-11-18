@@ -1,10 +1,9 @@
-from fontTools.ttLib.standardGlyphOrder import standardGlyphOrder
 from numpy.ma.core import cumsum, array
-from scipy.integrate import cumulative_trapezoid
-
 from spaces import BaseSpace
 from .BaseController import BaseController
 import numpy as np
+import matplotlib.pyplot as plt
+from tools.dataStorage import *
 
 
 def oil_intensity(x, y):
@@ -13,10 +12,11 @@ def oil_intensity(x, y):
 
 
 class IntensityBasedController(BaseController):
-
-    def __init__(self, starting_points, sample_time, space: BaseSpace, f0=0, mu=1):
+    def __init__(self, timestamped_folder, timestamped_suffix, starting_points, sample_time, space: BaseSpace, f0=0, mu=1):
         super().__init__()
         #self.m_f_prev = [oil_intensity(point[0], point[1]) for point in starting_points]
+        self.timestamped_folder = timestamped_folder
+        self.timestamped_suffix = timestamped_suffix
         self.m_f_prev = [space.get_intensity(point[0], point[1]) for point in starting_points]
         self.sample_time = sample_time
         self.f0 = f0
@@ -28,6 +28,7 @@ class IntensityBasedController(BaseController):
         self.sigmas = list()
         self.quality_array = list()
 
+
     def berman_law(self, f_current, f_prev):
         sigma = -np.sign((f_current - f_prev) / self.sample_time + self.mu * np.tanh(f_current - self.f0))
 
@@ -36,13 +37,13 @@ class IntensityBasedController(BaseController):
         self.sigmas.append(sigma)
         return sigma
 
+
     def generate_control(self, vehicles, positions):
         m_f_current = [self.space.get_intensity(eta[0], eta[1]) for eta in positions]
         #m_f_current = [oil_intensity(eta[0], eta[1]) for eta in positions]
         self.quality_array.append([self.space.get_nearest_contour_point_norm(eta[0], eta[1]) for eta in positions])
         controls = []
         for k in range(len(vehicles)):
-
             f_current = m_f_current[k]
             f_prev = self.m_f_prev[k]
             self.store_intensity(k,f_current)
@@ -58,38 +59,42 @@ class IntensityBasedController(BaseController):
         self.m_f_prev = m_f_current
         return controls
 
+
     def store_intensity(self, vehicle: int, intensity: float):
         if  vehicle >= len(self.intensity):
             self.intensity.append(list())
         self.intensity[vehicle].append(intensity)
 
-    def create_sigma_graph(self, path):
-        import matplotlib.pyplot as plt
 
-        #plt.plot(self.sigmas, label="Sigma")
-        plt.plot(self.der, label="Der")
-        plt.plot(self.mu_tanh, label="Mu х Tanh")
-        plt.legend()
-        plt.savefig(path)
-        plt.close()
+    def plotting_sigma(self):
+            plt.figure()
+            # ax.plot_surface()#plt.plot(self.sigmas, label="Sigma")
+            plt.plot(self.der, label="Der")
+            plt.plot(self.mu_tanh, label="Mu х Tanh")
+            plt.legend()
+            plt.savefig(os.path.join(self.timestamped_folder,
+                                     create_timestamped_filename_ext("sigmas",
+                                                                     self.timestamped_suffix,
+                                                                     "png")))
+            plt.close()
 
 
-    def create_quality_graph(self, path, sample_time):
+    def plotting_quality(self, sample_time):
         cumulative_quality = cumsum(sample_time*array(self.quality_array), axis=0)
-        print(cumulative_quality.shape)
-        import matplotlib.pyplot as plt
+        #print(cumulative_quality.shape)
 
-        #plt.plot(self.sigmas, label="Sigma")
+        plt.figure()
         for i in range(cumulative_quality.shape[1]):
             plt.plot(cumulative_quality[:, i], label=f"Quality {i+1}")
         plt.legend()
-        plt.savefig(path)
+        plt.savefig(os.path.join(self.timestamped_folder,
+                                 create_timestamped_filename_ext("quality",
+                                                                 self.timestamped_suffix,
+                                                                 "png")))
         plt.close()
 
 
-    def create_intensity_graph(self, path, separate_plots=False):
-        import matplotlib.pyplot as plt
-
+    def plotting_intensity(self, separate_plots=False):
         """
         Plots the field intensity based on the number of steps for multiple agents.
 
@@ -128,6 +133,8 @@ class IntensityBasedController(BaseController):
             plt.xlabel('Steps')
             plt.ylabel('Field Intensity')
             plt.legend()
-
-        plt.savefig(path)
+        plt.savefig(os.path.join(self.timestamped_folder,
+                                 create_timestamped_filename_ext("intensity",
+                                                                 self.timestamped_suffix,
+                                                                 "png")))
         plt.close()

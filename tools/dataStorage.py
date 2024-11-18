@@ -30,7 +30,7 @@ def create_timestamped_filename_ext(base_name: str, suffix: str, extension: str)
         return f"{base_name}_{create_timestamped_suffix()}.{extension}"
 
 
-def create_timestamped_folder(base_path="./data", suffix=""):
+def create_timestamped_folder(*args, base_path="./data", timestamped_suffix=""):
     """
     Creates a new folder with a name containing the current date and time.
 
@@ -42,10 +42,13 @@ def create_timestamped_folder(base_path="./data", suffix=""):
     """
 
     # Construct the folder name
-    if len(suffix):
-        folder_name = f"experiment_{suffix}"
+    folder_name = "experiment_"
+    for arg in args:
+        folder_name += f"{arg}_"
+    if len(timestamped_suffix):
+        folder_name += timestamped_suffix
     else:
-        folder_name = f"experiment_{create_timestamped_suffix()}"
+        folder_name += create_timestamped_suffix()
 
     # Create the full path
     folder_path = os.path.join(base_path, folder_name)
@@ -81,7 +84,7 @@ class Arguments:
                  big_picture: bool,
                  not_animated: bool,
                  space_filename: str,
-                 space_name: str,
+                 space_type: str,
                  N: int,
                  sample_time: float,
                  cycles: int,
@@ -95,7 +98,7 @@ class Arguments:
         self.big_picture = big_picture
         self.not_animated = not_animated
         self.space_filename = space_filename
-        self.space_name = space_name
+        self.space_type = space_type
         self.N = N
         self.sample_time = sample_time
         self.cycles = cycles
@@ -112,7 +115,7 @@ class Arguments:
                     "big_picture": self.big_picture,
                     "not_animated": self.not_animated,
                     "space_filename": self.space_filename,
-                    "space_name": self.space_name,
+                    "space_type": self.space_type,
                     "N": self.N,
                     "sample_time": self.sample_time,
                     "cycles": self.cycles,
@@ -124,6 +127,14 @@ class Arguments:
                     "beta_current": self.beta_current
                 }
 
+    # Save the variables to a new JSON file
+    def store_in_config(self, folder, suffix):
+        with open(os.path.join(folder,
+                               create_timestamped_filename_ext("config",
+                                                               suffix,
+                                                               "json")), 'w') as config:
+            json.dump(self.get_json_data(), config, indent=4)
+
 
 def read_and_assign_parameters(input_filename):
     with open(input_filename, 'r') as file:
@@ -134,7 +145,7 @@ def read_and_assign_parameters(input_filename):
                      big_picture = bool(data['big_picture']),
                      not_animated = bool(data['not_animated']),
                      space_filename = str(data['space_filename']),
-                     space_name = str(data['space_name']),
+                     space_type = str(data['space_type']),
                      N = int(data['N']),
                      sample_time = float(data['sample_time']),
                      cycles = int(data['cycles']),
@@ -146,9 +157,23 @@ def read_and_assign_parameters(input_filename):
                      beta_current = float(data['beta_current']))
 
 
-# Save the variables to a new JSON file
-def save_parameters(output_filename, arguments: Arguments):
-    with open(output_filename, 'w') as saved_config:
-        json.dump(arguments.get_json_data(), saved_config, indent=4)
+def overwrite_file(old_name, new_name):
+    """
+    Overwrite a file with a different name.
+
+    Parameters:
+    old_name (str): The name of the file to be overwritten.
+    new_name (str): The new name of the file.
+    """
+    # Check if the old file exists
+    if not os.path.exists(old_name):
+        raise FileNotFoundError(f"The file '{old_name}' does not exist.")
+
+    # Remove the new file if it already exists
+    if os.path.exists(new_name):
+        os.remove(new_name)
+
+    # Copy the old file to the new file name (overwriting if exists)
+    shutil.copyfile(old_name, new_name)
 
 
