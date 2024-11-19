@@ -6,11 +6,6 @@ import matplotlib.pyplot as plt
 from tools.dataStorage import *
 
 
-def oil_intensity(x, y):
-    # print(-(x - 10) ** 2 - (y - 10) ** 2 + 30)
-    return -(x - 10) ** 2 - (y - 10) ** 2 + 30
-
-
 class IntensityBasedController(BaseController):
     def __init__(self, timestamped_folder, timestamped_suffix, starting_points, sample_time, space: BaseSpace, f0=0, mu=1):
         super().__init__()
@@ -29,25 +24,26 @@ class IntensityBasedController(BaseController):
         self.quality_array = list()
 
 
-    def berman_law(self, f_current, f_prev):
-        sigma = -np.sign((f_current - f_prev) / self.sample_time + self.mu * np.tanh(f_current - self.f0))
+    def berman_law(self, vehicle, f_current, f_prev):
+        mu_tanh = self.mu * np.tanh(f_current - self.f0)
+        der = (f_current - f_prev) / self.sample_time
+        sigma = -np.sign(der + mu_tanh)
 
-        self.der.append((f_current - f_prev) / self.sample_time)
-        self.mu_tanh.append(self.mu * np.tanh(f_current - self.f0))
-        self.sigmas.append(sigma)
+        self.store_der(vehicle, der)
+        self.store_mu_tanh(vehicle, mu_tanh)
+        self.store_sigma(vehicle, sigma)
         return sigma
 
 
     def generate_control(self, vehicles, positions):
         m_f_current = [self.space.get_intensity(eta[0], eta[1]) for eta in positions]
-        #m_f_current = [oil_intensity(eta[0], eta[1]) for eta in positions]
         self.quality_array.append([self.space.get_nearest_contour_point_norm(eta[0], eta[1]) for eta in positions])
         controls = []
         for k in range(len(vehicles)):
             f_current = m_f_current[k]
             f_prev = self.m_f_prev[k]
-            self.store_intensity(k,f_current)
-            sigma = self.berman_law(f_current, f_prev)
+            self.store_intensity(k, f_current)
+            sigma = self.berman_law(k, f_current, f_prev)
 
             if sigma < 0:
                 u_control = [vehicles[k].n_min, vehicles[k].n_max]
@@ -60,28 +56,50 @@ class IntensityBasedController(BaseController):
         return controls
 
 
+# TODO: collapse 4 identical store methods
     def store_intensity(self, vehicle: int, intensity: float):
         if  vehicle >= len(self.intensity):
             self.intensity.append(list())
         self.intensity[vehicle].append(intensity)
 
 
+    def store_sigma(self, vehicle: int, sigma: float):
+        if  vehicle >= len(self.sigmas):
+            self.sigmas.append(list())
+        self.sigmas[vehicle].append(sigma)
+
+
+    def store_mu_tanh(self, vehicle: int, mu_tanh: float):
+        if  vehicle >= len(self.mu_tanh):
+            self.mu_tanh.append(list())
+        self.mu_tanh[vehicle].append(mu_tanh)
+
+
+    def store_der(self, vehicle: int, der: float):
+        if vehicle >= len(self.der):
+            self.der.append(list())
+        self.der[vehicle].append(der)
+
+
     def plotting_sigma(self):
+        print(array(self.der).shape)
+        print(array(self.mu_tanh).shape)
+        print(array(self.sigmas).shape)
+        for vehicle in range(len(self.der)):
             plt.figure()
-            # ax.plot_surface()#plt.plot(self.sigmas, label="Sigma")
-            plt.plot(self.der, label="Der")
-            plt.plot(self.mu_tanh, label="Mu х Tanh")
+            plt.plot(self.der[vehicle], label="Der")
+            plt.plot(self.mu_tanh[vehicle], label="Mu х Tanh")
             plt.legend()
             plt.savefig(os.path.join(self.timestamped_folder,
-                                     create_timestamped_filename_ext("sigmas",
+                                     create_timestamped_filename_ext(f"sigmas_{vehicle}",
                                                                      self.timestamped_suffix,
                                                                      "png")))
-            plt.close()
+        plt.close()
 
 
     def plotting_quality(self, sample_time):
         cumulative_quality = cumsum(sample_time*array(self.quality_array), axis=0)
-        #print(cumulative_quality.shape)
+        # print(cumulative_quality.shape)
 
         plt.figure()
         for i in range(cumulative_quality.shape[1]):
@@ -105,9 +123,7 @@ class IntensityBasedController(BaseController):
         """
         num_agents = len(self.intensity)
         steps = range(len(self.intensity[0]))  # Assume all agents have the same number of steps
-        # print(num_agents)
-        # print(steps)
-        # print()
+
         if separate_plots:
             # Create a grid of subplots for each agent
             fig, axes = plt.subplots(num_agents, 1, figsize=(8, 4 * num_agents), sharex=True)

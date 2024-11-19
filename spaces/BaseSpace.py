@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC
-import matplotlib as plt
+import matplotlib.pyplot as plt
 from tools.dataStorage import *
 from collections.abc import Sequence
 

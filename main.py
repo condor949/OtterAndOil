@@ -7,6 +7,7 @@ main.py: Main program for the Otter and Oil, which can be used
 import os
 import argparse
 import webbrowser
+
 from lib import *
 from spaces import *
 from spaces.ParabolicSpace import Parabolic3DSpace
@@ -35,15 +36,21 @@ if __name__ == '__main__':
                             help='clean data directories')
     main_param.add_argument('-big', '--big-picture', action='store_true', dest='big_picture', default=False,
                             help='set parameters of animation x2')
-    main_param.add_argument('-disanim', '--disable-animation', action='store_true', dest='not_animated', default=False,
+    main_param.add_argument('--disable-animation', action='store_true', dest='not_animated', default=False,
                             help='enable picture only mode, disable animation')
-    main_param.add_argument('-space', '--space-file', dest='space_filename', default='./space.json', help='')
+    main_param.add_argument('-space', '--space-file', dest='space_filename', default='space.json', help='')
+    main_param.add_argument('--cache-dir', dest='cache_dir', default='data', help='')
     # do not store in config file
     main_param.add_argument('-c', '--config-file', dest='config_filename', default='', help='')
 
     sym_param = parser.add_argument_group('simulation parameters')
     sym_param.add_argument('--space-type', metavar='space_type', default='', dest='space_type', type=str,
-                           help='')
+                           help='a keyword describing the type of curve defining the space of the concentration field.'
+                                'In fact, the derivative of the concentration function at the boundary of the isoline depends on this. '
+                                'It can be parabolic and gaussian')
+    sym_param.add_argument('-raw', '--store-raw', action='store_true', dest='store_raw', default=False,
+                           help='space, trajectory and intensity data are stored in vector format.'
+                                'Data extension for analysis - npy')
     sym_param.add_argument('-N', '--number-samples', metavar='N', default=20000, dest='N', type=int,
                            help='number of samples')
     sym_param.add_argument('-sT', '--sample-time', metavar='sample_time', default=0.02, dest='sample_time', type=float,
@@ -57,28 +64,16 @@ if __name__ == '__main__':
     sym_param.add_argument('-GS','--grid-size', metavar='grid_size', default=500, dest='grid_size', help='number of 3D data points')
     sym_param.add_argument('-FPS','--frames-per-second',metavar='FPS', default=30, dest='FPS', help='frames per second (animated GIF)')
 
-    veh_params = parser.add_argument_group('catamaran parameters')
+    veh_params = parser.add_argument_group('flow parameters')
     veh_params.add_argument('-V', '--v-current', metavar='V_current', default=0, dest='V_current', type=float,
-                            help='current speed (m/s)')
+                            help='current flow speed (m/s)')
     veh_params.add_argument('-bC', '--beta-current', metavar='beta_current', default=-30.0, dest='beta_current',
                             type=float, help='current direction (deg)')
 
     args = parser.parse_args()
+    #print(vars(args))
     if not args.config_filename:
-        arguments = Arguments(clean_cache = args.clean_cache,
-                              big_picture = args.big_picture,
-                              not_animated = args.not_animated,
-                              space_filename = args.space_filename,
-                              space_type= args.space_type,
-                              N = args.N,
-                              sample_time = args.sample_time,
-                              cycles = args.cycles,
-                              radius = args.radius,
-                              catamarans = args.catamarans,
-                              grid_size=args.grid_size,
-                              FPS=args.FPS,
-                              V_current = args.V_current,
-                              beta_current = args.beta_current)
+        arguments = Arguments(**vars(args))
     else:
         arguments = read_and_assign_parameters(args.config_filename)
 
@@ -105,23 +100,25 @@ if __name__ == '__main__':
     start_points = [[-10, -10]]
     if arguments.space_type == 'parabolic':
         space = Parabolic3DSpace(grid_size=arguments.grid_size,
-                                shift_x=0,
-                                shift_y=0,
-                                shift_z=-10,
-                                space_filename=args.space_filename)
+                                 shift_x=0,
+                                 shift_y=0,
+                                 shift_z=-10,
+                                 space_filename=args.space_filename)
     else:
         space = Gaussian3DSpace(grid_size=arguments.grid_size,
                                 shift_x=0,
                                 shift_y=0,
                                 shift_z=-10,
                                 space_filename=args.space_filename)
+        arguments.space_type = "gaussian"
 
     space.set_contour_points(tol=1)
     for i in range(arguments.cycles):
         if arguments.catamarans > 1:
             start_points = generate_random_points(arguments.radius, arguments.catamarans)
         timestamped_suffix: str = create_timestamped_suffix()
-        timestamped_folder: str = create_timestamped_folder(arguments.space_type, f"s{i + 1}",
+        timestamped_folder: str = create_timestamped_folder(arguments.space_type,
+                                                            f"s{i + 1}",
                                                             timestamped_suffix=timestamped_suffix)
         controller = IntensityBasedController(timestamped_folder=timestamped_folder,
                                               timestamped_suffix=timestamped_suffix,
@@ -134,14 +131,14 @@ if __name__ == '__main__':
         controller.plotting_intensity()
         controller.plotting_sigma()
         controller.plotting_quality(sample_time=arguments.sample_time)
-        plot3D(swarmData,
+        plotting_track(swarmData,
                arguments.grid_size,
                arguments.FPS,
-               os.path.join(timestamped_folder,
-                            create_timestamped_filename_ext('3D_animation',
-                                                            timestamped_suffix,
-                                                            "gif")),
-               1, arguments.big_picture, space, arguments.not_animated)
+               timestamped_folder,
+               timestamped_suffix,
+               space,
+               arguments.big_picture,
+               arguments.not_animated)
         space.plotting_surface(timestamped_folder, timestamped_suffix)
 
         arguments.store_in_config(folder=timestamped_folder,suffix=timestamped_suffix)

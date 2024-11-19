@@ -18,8 +18,9 @@ from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
 from tools.randomPoints import color_generator
+from tools.dataStorage import *
 from functools import partial
-from spaces import *
+from spaces import BaseSpace
 
 legendSize = 10  # legend size
 figSize1 = [25, 13]  # figure1 size in cm
@@ -164,13 +165,13 @@ def plotControls(simTime, simData, vehicle, figNo):
 
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
-def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, space: BaseSpace, not_animated: bool=False):
+def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpace, big_picture: bool=False, not_animated: bool=False):
     # Attaching 3D axis to the figure
     if big_picture:
-        fig = plt.figure(figNo, figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
+        fig = plt.figure(figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
                          dpi=dpiValue)
     else:
-        fig = plt.figure(figNo, figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
+        fig = plt.figure(figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
                          dpi=dpiValue)
     ax = p3.Axes3D(fig, auto_add_to_figure=False)
     ax.view_init(elev=90, azim=-90)
@@ -218,14 +219,14 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, sp
         plotData[line] = dataSet
 
     # Setting the axes properties
-    ax.set_xlabel('X / East')
-    ax.set_ylabel('Y / North')
+    ax.set_xlabel('X,m / East')
+    ax.set_ylabel('Y,m / North')
     ax.set_zlim3d([-100, 20])  # default depth = -100 m
 
     if np.amax(z) > 100.0:
         ax.set_zlim3d([-np.amax(z), 20])
 
-    ax.set_zlabel('-Z / Down')
+    ax.set_zlabel('-Z,m / Down')
 
     # Plot 2D surface for z = 0
     [x_min, x_max] = ax.get_xlim()
@@ -240,7 +241,10 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, sp
     ax.set_title('North-East-Down')
 
     if not_animated:
-        plt.savefig(filename.replace("gif", "png"))
+        plt.savefig(os.path.join(folder,
+                                 create_timestamped_filename_ext('track',
+                                                                 suffix,
+                                                                 "png")))
         plt.show()
         return
 
@@ -259,4 +263,7 @@ def plot3D(swarmData, numDataPoints, FPS, filename, figNo, big_picture: bool, sp
         except:
             writer = animation.PillowWriter(fps=FPS)
 
-        ani.save(filename, writer=writer, progress_callback=update_func)
+        ani.save(os.path.join(folder,
+                                 create_timestamped_filename_ext('track',
+                                                                 suffix,
+                                                                 "gif")), writer=writer, progress_callback=update_func)

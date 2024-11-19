@@ -42,7 +42,7 @@ def create_timestamped_folder(*args, base_path="./data", timestamped_suffix=""):
     """
 
     # Construct the folder name
-    folder_name = "experiment_"
+    folder_name = "expt_"
     for arg in args:
         folder_name += f"{arg}_"
     if len(timestamped_suffix):
@@ -79,42 +79,33 @@ def clean_data():
 
 
 class Arguments:
-    def __init__(self,
-                 clean_cache: bool,
-                 big_picture: bool,
-                 not_animated: bool,
-                 space_filename: str,
-                 space_type: str,
-                 N: int,
-                 sample_time: float,
-                 cycles: int,
-                 radius: int,
-                 catamarans: int,
-                 grid_size: int,
-                 FPS: int,
-                 V_current: float,
-                 beta_current: float):
-        self.clean_cache = clean_cache
-        self.big_picture = big_picture
-        self.not_animated = not_animated
-        self.space_filename = space_filename
-        self.space_type = space_type
-        self.N = N
-        self.sample_time = sample_time
-        self.cycles = cycles
-        self.radius = radius
-        self.catamarans = catamarans
-        self.grid_size = grid_size
-        self.FPS = FPS
-        self.V_current = V_current
-        self.beta_current = beta_current
+    def __init__(self, **arguments):
+        #print(arguments)
+        self.clean_cache = arguments["clean_cache"]
+        self.big_picture = arguments["big_picture"]
+        self.not_animated = arguments["not_animated"]
+        self.store_raw = arguments["store_raw"]
+        self.space_filename = arguments["space_filename"]
+        self.cache_dir = arguments["cache_dir"]
+        self.space_type = arguments["space_type"]
+        self.N = arguments["N"]
+        self.sample_time = arguments["sample_time"]
+        self.cycles = arguments["cycles"]
+        self.radius = arguments["radius"]
+        self.catamarans = arguments["catamarans"]
+        self.grid_size = arguments["grid_size"]
+        self.FPS = arguments["FPS"]
+        self.V_current = arguments["V_current"]
+        self.beta_current = arguments["beta_current"]
 
     def get_json_data(self):
         return {
                     "clean_cache": self.clean_cache,
                     "big_picture": self.big_picture,
                     "not_animated": self.not_animated,
+                    "store_raw": self.store_raw,
                     "space_filename": self.space_filename,
+                    "cache_dir": self.cache_dir,
                     "space_type": self.space_type,
                     "N": self.N,
                     "sample_time": self.sample_time,
@@ -139,22 +130,7 @@ class Arguments:
 def read_and_assign_parameters(input_filename):
     with open(input_filename, 'r') as file:
         data = json.load(file)
-
-    # Assign values with appropriate types
-    return Arguments(clean_cache = bool(data['clean_cache']),
-                     big_picture = bool(data['big_picture']),
-                     not_animated = bool(data['not_animated']),
-                     space_filename = str(data['space_filename']),
-                     space_type = str(data['space_type']),
-                     N = int(data['N']),
-                     sample_time = float(data['sample_time']),
-                     cycles = int(data['cycles']),
-                     radius = int(data['radius']),
-                     catamarans = int(data['catamarans']),
-                     grid_size=int(data['grid_size']),
-                     FPS=int(data['FPS']),
-                     V_current = float(data['V_current']),
-                     beta_current = float(data['beta_current']))
+    return Arguments(**data)
 
 
 def overwrite_file(old_name, new_name):
