@@ -88,6 +88,8 @@ class Arguments:
         self.space_filename = arguments["space_filename"]
         self.cache_dir = arguments["cache_dir"]
         self.space_type = arguments["space_type"]
+        self.shift_vehicle = arguments["shift_vehicle"]
+        self.shift_field = arguments["shift_field"]
         self.N = arguments["N"]
         self.sample_time = arguments["sample_time"]
         self.cycles = arguments["cycles"]
@@ -107,6 +109,8 @@ class Arguments:
                     "space_filename": self.space_filename,
                     "cache_dir": self.cache_dir,
                     "space_type": self.space_type,
+                    "shift_vehicle": self.shift_vehicle,
+                    "shift_field": self.shift_field,
                     "N": self.N,
                     "sample_time": self.sample_time,
                     "cycles": self.cycles,
@@ -127,7 +131,7 @@ class Arguments:
             json.dump(self.get_json_data(), config, indent=4)
 
 
-def read_and_assign_parameters(input_filename):
+def read_and_assign_arguments(input_filename):
     with open(input_filename, 'r') as file:
         data = json.load(file)
     return Arguments(**data)

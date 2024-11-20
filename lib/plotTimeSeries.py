@@ -13,6 +13,7 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.pyplot import legend
 from tqdm import tqdm
 from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
@@ -22,7 +23,7 @@ from tools.dataStorage import *
 from functools import partial
 from spaces import BaseSpace
 
-legendSize = 10  # legend size
+legendSize = 10
 figSize1 = [25, 13]  # figure1 size in cm
 bigFigSize1 = [50, 26]  # larger figure1 size in cm
 figSize2 = [25, 13]  # figure2 size in cm
@@ -177,22 +178,11 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
     ax.view_init(elev=90, azim=-90)
     fig.add_axes(ax)
 
-    # space.
     plane_z = 0
     # ax = fig.add_subplot(111, projection='3d')
-    # ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.7)
+    ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.7)
     ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red')  # Intersection line
-
-    # Plot target circle
-    # alpha = np.linspace(0, 2 * np.pi, 100)
-    # r = np.sqrt(30)
-    # x0 = 10
-    # y0 = 10
-    # x_circ = x0 + r * np.cos(alpha)
-    # y_circ = y0 + r * np.sin(alpha)
-    # z_circ = np.zeros(100)
-    # plt.plot(x_circ, y_circ, z_circ, lw=2, c='r')
-
+    #ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[-9], colors='orange')
     # Animation function
     def anim_function(num, plotData):
         for line, dataSet in plotData.items():

@@ -7,108 +7,88 @@ from tools.dataStorage import *
 
 
 class IntensityBasedController(BaseController):
-    def __init__(self, timestamped_folder, timestamped_suffix, starting_points, sample_time, space: BaseSpace, f0=0, mu=1):
+    def __init__(self, timestamped_folder, timestamped_suffix, vehicles, N, starting_points, sample_time, space: BaseSpace, f0=0, mu=0.5):
         super().__init__()
-        #self.m_f_prev = [oil_intensity(point[0], point[1]) for point in starting_points]
         self.timestamped_folder = timestamped_folder
         self.timestamped_suffix = timestamped_suffix
         self.m_f_prev = [space.get_intensity(point[0], point[1]) for point in starting_points]
         self.sample_time = sample_time
         self.f0 = f0
-        self.mu = mu*0.5
+        self.mu = mu
         self.space = space
-        self.intensity = list()
-        self.der = list()
-        self.mu_tanh = list()
-        self.sigmas = list()
-        self.quality_array = list()
+        self.number_of_vehicles = len(vehicles)
+        self.intensity = np.zeros((self.number_of_vehicles, N), dtype=float)
+        self.der = np.zeros((self.number_of_vehicles, N), dtype=float)
+        self.mu_tanh = np.zeros((self.number_of_vehicles, N), dtype=float)
+        self.sigmas = np.zeros((self.number_of_vehicles, N), dtype=float)
+        self.quality_array = np.zeros((self.number_of_vehicles, N), dtype=float)
 
 
-    def berman_law(self, vehicle, f_current, f_prev):
-        mu_tanh = self.mu * np.tanh(f_current - self.f0)
-        der = (f_current - f_prev) / self.sample_time
-        sigma = -np.sign(der + mu_tanh)
-
-        self.store_der(vehicle, der)
-        self.store_mu_tanh(vehicle, mu_tanh)
-        self.store_sigma(vehicle, sigma)
-        return sigma
+    def berman_law(self, vehicle, step, f_current, f_prev):
+        self.der[vehicle, step] = (f_current - f_prev) / self.sample_time
+        self.mu_tanh[vehicle, step] = self.mu * np.tanh(f_current - self.f0)
+        self.sigmas[vehicle, step] = -np.sign(self.der[vehicle, step] + self.mu_tanh[vehicle, step])
+        return self.sigmas[vehicle, step]
 
 
-    def generate_control(self, vehicles, positions):
+    def generate_control(self, vehicles, positions, step):
         m_f_current = [self.space.get_intensity(eta[0], eta[1]) for eta in positions]
-        self.quality_array.append([self.space.get_nearest_contour_point_norm(eta[0], eta[1]) for eta in positions])
+        # self.quality_array.append([self.space.get_nearest_contour_point_norm(eta[0], eta[1]) for eta in positions])
         controls = []
-        for k in range(len(vehicles)):
-            f_current = m_f_current[k]
-            f_prev = self.m_f_prev[k]
-            self.store_intensity(k, f_current)
-            sigma = self.berman_law(k, f_current, f_prev)
+        for vehicle in range(self.number_of_vehicles):
+            f_current = m_f_current[vehicle]
+            f_prev = self.m_f_prev[vehicle]
+            sigma = self.berman_law(vehicle, step, f_current, f_prev)
 
             if sigma < 0:
-                u_control = [vehicles[k].n_min, vehicles[k].n_max]
+                u_control = [vehicles[vehicle].n_min, vehicles[vehicle].n_max]
             elif sigma > 0:
-                u_control = [vehicles[k].n_max, vehicles[k].n_min]
+                u_control = [vehicles[vehicle].n_max, vehicles[vehicle].n_min]
             else:
                 u_control = [0, 0]
             controls.append(u_control)
+
+            self.intensity[vehicle, step] = f_current
+            self.quality_array[vehicle, step] = self.space.get_nearest_contour_point_norm(positions[vehicle][0], positions[vehicle][1])
         self.m_f_prev = m_f_current
         return controls
 
 
-# TODO: collapse 4 identical store methods
-    def store_intensity(self, vehicle: int, intensity: float):
-        if  vehicle >= len(self.intensity):
-            self.intensity.append(list())
-        self.intensity[vehicle].append(intensity)
-
-
-    def store_sigma(self, vehicle: int, sigma: float):
-        if  vehicle >= len(self.sigmas):
-            self.sigmas.append(list())
-        self.sigmas[vehicle].append(sigma)
-
-
-    def store_mu_tanh(self, vehicle: int, mu_tanh: float):
-        if  vehicle >= len(self.mu_tanh):
-            self.mu_tanh.append(list())
-        self.mu_tanh[vehicle].append(mu_tanh)
-
-
-    def store_der(self, vehicle: int, der: float):
-        if vehicle >= len(self.der):
-            self.der.append(list())
-        self.der[vehicle].append(der)
-
-
     def plotting_sigma(self):
-        print(array(self.der).shape)
-        print(array(self.mu_tanh).shape)
-        print(array(self.sigmas).shape)
-        for vehicle in range(len(self.der)):
+        # print(array(self.der).shape)
+        # print(array(self.mu_tanh).shape)
+        # print(array(self.sigmas).shape)
+        for vehicle in range(self.number_of_vehicles):
             plt.figure()
-            plt.plot(self.der[vehicle], label="Der")
-            plt.plot(self.mu_tanh[vehicle], label="Mu х Tanh")
-            plt.legend()
+            plt.plot(self.der[vehicle], label='Der')
+            plt.plot(self.mu_tanh[vehicle], label='Mu х Tanh')
+            plt.xlabel('Time (s)', fontsize=12)
+            plt.ylabel('Control', fontsize=12)
+            plt.title("Control",
+                       fontsize=10)
             plt.savefig(os.path.join(self.timestamped_folder,
-                                     create_timestamped_filename_ext(f"sigmas_{vehicle}",
+                                     create_timestamped_filename_ext(f'sigmas_v{vehicle}',
                                                                      self.timestamped_suffix,
-                                                                     "png")))
+                                                                     'png')))
         plt.close()
 
 
-    def plotting_quality(self, sample_time):
-        cumulative_quality = cumsum(sample_time*array(self.quality_array), axis=0)
-        # print(cumulative_quality.shape)
+    def plotting_quality(self):
+        cumulative_quality = cumsum(self.sample_time*self.quality_array, axis=1)
+        #print(cumulative_quality.shape)
 
         plt.figure()
-        for i in range(cumulative_quality.shape[1]):
-            plt.plot(cumulative_quality[:, i], label=f"Quality {i+1}")
+        plt.xlabel('Time (s)', fontsize=12)
+        plt.ylabel('Total integral', fontsize=12)
+        plt.title('The total value of the shortest distance at each point of the trajectory',
+                  fontsize=10)
+        for i in range(self.number_of_vehicles):
+            plt.plot(cumulative_quality[i], label=f'Quality v{i+1}')
         plt.legend()
         plt.savefig(os.path.join(self.timestamped_folder,
-                                 create_timestamped_filename_ext("quality",
+                                 create_timestamped_filename_ext('quality',
                                                                  self.timestamped_suffix,
-                                                                 "png")))
+                                                                 'png')))
         plt.close()
 
 
@@ -131,7 +111,7 @@ class IntensityBasedController(BaseController):
                 axes = [axes]  # Make it iterable if there is only one subplot
 
             for i, (intensities, ax) in enumerate(zip(self.intensity, axes)):
-                ax.plot(steps, intensities, label=f'Agent {i + 1}', color=f'C{i}')
+                ax.plot(steps, intensities, label=f'Agent v{i + 1}', color=f'C{i}')
                 ax.set_title(f'Agent {i + 1} Field Intensity Over Steps')
                 ax.set_xlabel('Steps')
                 ax.set_ylabel('Field Intensity')
@@ -150,7 +130,7 @@ class IntensityBasedController(BaseController):
             plt.ylabel('Field Intensity')
             plt.legend()
         plt.savefig(os.path.join(self.timestamped_folder,
-                                 create_timestamped_filename_ext("intensity",
+                                 create_timestamped_filename_ext('intensity',
                                                                  self.timestamped_suffix,
-                                                                 "png")))
+                                                                 'png')))
         plt.close()

@@ -10,7 +10,6 @@ import webbrowser
 
 from lib import *
 from spaces import *
-from spaces.ParabolicSpace import Parabolic3DSpace
 from vehicles import *
 from controllers import *
 from tools.dataStorage import *
@@ -74,15 +73,17 @@ if __name__ == '__main__':
     #print(vars(args))
     if not args.config_filename:
         arguments = Arguments(**vars(args))
+        arguments.shift_field = [5, 5]
+        arguments.shift_vehicle = [-10, -10]
     else:
-        arguments = read_and_assign_parameters(args.config_filename)
+        arguments = read_and_assign_arguments(args.config_filename)
 
     ###############################################################################
     # Vehicle constructors
     ###############################################################################
     # printSimInfo()
 
-    vehicles = [otter(V_current=arguments.V_current, beta_current=arguments.beta_current) for _ in range(arguments.catamarans)]
+    vehicles = [Otter(V_current=arguments.V_current, beta_current=arguments.beta_current) for _ in range(arguments.catamarans)]
     # printVehicleinfo(vehicle, args.sample_time, args.N)
 
     # plotVehicleStates(simTime, simData, 1)
@@ -97,31 +98,36 @@ if __name__ == '__main__':
         clean_data()
     if arguments.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
-    start_points = [[-10, -10]]
+    start_points = [arguments.shift_vehicle]
     if arguments.space_type == 'parabolic':
         space = Parabolic3DSpace(grid_size=arguments.grid_size,
-                                 shift_x=0,
-                                 shift_y=0,
+                                 shift_x=arguments.shift_field[0],
+                                 shift_y=arguments.shift_field[1],
                                  shift_z=-10,
-                                 space_filename=args.space_filename)
+                                 space_filename=arguments.space_filename)
     else:
         space = Gaussian3DSpace(grid_size=arguments.grid_size,
-                                shift_x=0,
-                                shift_y=0,
+                                shift_x=arguments.shift_field[0],
+                                shift_y=arguments.shift_field[1],
                                 shift_z=-10,
-                                space_filename=args.space_filename)
+                                space_filename=arguments.space_filename)
         arguments.space_type = "gaussian"
 
     space.set_contour_points(tol=1)
+
     for i in range(arguments.cycles):
         if arguments.catamarans > 1:
             start_points = generate_random_points(arguments.radius, arguments.catamarans)
+            start_points[0][0] += arguments.shift_vehicle[0]
+            start_points[0][1] += arguments.shift_vehicle[1]
         timestamped_suffix: str = create_timestamped_suffix()
         timestamped_folder: str = create_timestamped_folder(arguments.space_type,
                                                             f"s{i + 1}",
                                                             timestamped_suffix=timestamped_suffix)
         controller = IntensityBasedController(timestamped_folder=timestamped_folder,
                                               timestamped_suffix=timestamped_suffix,
+                                              vehicles=vehicles,
+                                              N=arguments.N+1,
                                               starting_points=start_points,
                                               sample_time=arguments.sample_time,
                                               space=space)
@@ -130,7 +136,7 @@ if __name__ == '__main__':
                                                      sample_time=arguments.sample_time, controller=controller)
         controller.plotting_intensity()
         controller.plotting_sigma()
-        controller.plotting_quality(sample_time=arguments.sample_time)
+        controller.plotting_quality()
         plotting_track(swarmData,
                arguments.grid_size,
                arguments.FPS,
@@ -141,7 +147,7 @@ if __name__ == '__main__':
                arguments.not_animated)
         space.plotting_surface(timestamped_folder, timestamped_suffix)
 
-        arguments.store_in_config(folder=timestamped_folder,suffix=timestamped_suffix)
+        arguments.store_in_config(timestamped_folder, timestamped_suffix)
         space.store_in_config(timestamped_folder, timestamped_suffix)
 
     print('Done!')

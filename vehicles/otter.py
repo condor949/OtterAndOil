@@ -45,7 +45,7 @@ from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 
 
 # Class Vehicle
-class otter:
+class Otter:
     """
     otter()                                           Propeller step inputs
     otter('headingAutopilot',psi_d,V_c,beta_c,tau_X)  Heading autopilot

@@ -6,5 +6,5 @@ class BaseController(ABC):
     def __init__(self):
         pass
 
-    def generate_control(self, vehicles, positions) -> Sequence:
+    def generate_control(self, vehicles, positions, step) -> Sequence:
         pass
