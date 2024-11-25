@@ -180,7 +180,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
 
     plane_z = 0
     # ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.7)
+    ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.5)
     ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red')  # Intersection line
     #ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[-9], colors='orange')
     # Animation function
@@ -188,7 +188,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
         for line, dataSet in plotData.items():
             line.set_data(dataSet[0:2, :num])
             line.set_3d_properties(dataSet[2, :num])
-            # ax.view_init(elev=10.0, azim=-120.0)
+            ax.view_init(elev=30.0, azim=-120.0)
         return plotData.keys()
 
     color_gen = color_generator()
@@ -211,7 +211,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
     # Setting the axes properties
     ax.set_xlabel('X,m / East')
     ax.set_ylabel('Y,m / North')
-    ax.set_zlim3d([-100, 20])  # default depth = -100 m
+    ax.set_zlim3d([-10, 30])  # default depth = -100 m
 
     if np.amax(z) > 100.0:
         ax.set_zlim3d([-np.amax(z), 20])
@@ -235,8 +235,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
                                  create_timestamped_filename_ext('track',
                                                                  suffix,
                                                                  "png")))
-        plt.show()
-        return
+        #plt.show()
 
     # Create the animation object
     ani = animation.FuncAnimation(fig,
@@ -254,6 +253,6 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
             writer = animation.PillowWriter(fps=FPS)
 
         ani.save(os.path.join(folder,
-                                 create_timestamped_filename_ext('track',
-                                                                 suffix,
-                                                                 "gif")), writer=writer, progress_callback=update_func)
+                              create_timestamped_filename_ext('track',
+                                                              suffix,
+                                                              "gif")), writer=writer, progress_callback=update_func)

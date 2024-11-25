@@ -42,6 +42,7 @@ Author:     Thor I. Fossen
 import numpy as np
 import math
 from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
+from tools.randomPoints import *
 
 
 # Class Vehicle
@@ -63,7 +64,11 @@ class Otter:
             r=0,
             V_current=0,
             beta_current=0,
-            tau_X=120
+            tau_X=120,
+            serial_number=0,
+            shift=None,
+            color='b',
+            starting_point=None
     ):
 
         # Constants
@@ -71,6 +76,7 @@ class Otter:
         self.g = 9.81  # acceleration of gravity (m/s^2)
         rho = 1026  # density of water (kg/m^3)
 
+        # TODO: correct the description of the control system
         if controlSystem == "headingAutopilot":
             self.controlDescription = (
                     "Heading autopilot, psi_d = "
@@ -94,6 +100,14 @@ class Otter:
         self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
         self.name = "Otter USV (see 'otter.py' for more details)"
+        self.serial_number = serial_number
+        if shift is None:
+            shift = np.array([0, 0], float)
+        if starting_point is None:
+            self.starting_point = np.array([0, 0], float) + np.array(shift, float)
+        else:
+            self.starting_point = np.array(starting_point, float)+ np.array(shift, float)
+        self.color = color
 
         self.controls = [
             "Left propeller shaft speed (rad/s)",
@@ -218,6 +232,31 @@ class Otter:
         self.a_d = 0
         self.wn_d = self.wn / 5  # desired natural frequency in yaw
         self.zeta_d = 1  # desired relative damping ratio
+
+    def __str__(self):
+        return ("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
+                "░░░░░░░░░░░░░░░░░▒▓▒▒░░▒▓▒░░░░░░░░░░░░░░░░░░░░░░░\n"
+                "░░░░░░░▓▓▒▒░░░░▒▓▓▓▓▓▓█▓▒▒▓░░░░░░░░░░░░░░░░░░░░░░\n"
+                "░░░░░░░▒▓░░░░░░░░░░▓█▓▒▒▒▒▒▓▓░░░░░░░░░░░░░░░░░░░░\n"
+                "░░░░░░░░░█▓▓▓░░░░░░██▓░░░░░░░▒▒▒░░░░░░░░░░░░░░░░░\n"
+                "░░▒▓▒▒░░░█▓▓▓▒░░░░▒█▓█▒░░░░▒▒░░░░░░▒▓▒▒░░░░░░░░░░\n"
+                "░░█████▓█▓▓▒▓▓▓▓▓█▓▒██▓░░░░░░░░░░░▓█████▓░░░░░░░▓\n"
+                "░░░░▓███▓▓▒▒▒▒▒▒▓▓▓▓▓▓▓▒░░░░░░░░▒███████▒░░░░░░░░\n"
+                "░▒░░░▒▓████▓▓▒▒▒▒▒▓▓▓▓▓▓▓▓▒▒▒▓▒██████████▓▓████▒░\n"
+                "░▒░▒▒░▒▒▓██████▓▓▓▓▓▓▓▓▓▓▓▓▓▓███████████████████░\n"
+                "░░▒░░░░░░░▓████████▓▓▓▓▓▓▓▓▓▓▓█░░░░░░░░░░░░░░░░░░\n"
+                "░░░░░░░░░░░░▒▓█████████████▓▓▓█▓░░░░░░░░░░░░░░░░░\n"
+                "░░░░░░░░░░░░░░░░▒▓█████████████▓▓█▓▒░░░░░░░░░░░░░\n"
+                "░░░░░░░░░░░░░░░░░░░░▒▓███████████████▓▓░░░░░░░░░░\n"
+                "░░░░░░░░░░░░░░░░░░░░░░░░░▒▓▓████████████░░░░░░░░░\n"
+                "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░▒▒▒▓▓▓▓▓░░░░░░░░░\n"
+                "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
+                "░░░░░░░░▓██████▒░░▓██░░░▒██░░░░░░░░░░░░░░░░░░░░░░\n"
+                "░░░░░░░██▓░░░▒██▒▓████▓▓█████░░▓████▒░░▓██▓█▓░░░░\n"
+                "░░░░░░░██▒░░░░▓█▒░▓██░░░▒██░░░██▓░░▓█▒░▓██░░░░░░░\n"
+                "░░░░░░░███░░░▒██▒░▓██░░░▒██░░░██▓░░░░░░▓██░░░░░░░\n"
+                "░░░░░░░░▓█████▓░░░░███▓░░▓███░░██████▒░▓██░░░░░░░\n"
+                "░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n")
 
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
         """

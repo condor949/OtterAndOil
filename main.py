@@ -8,12 +8,13 @@ import os
 import argparse
 import webbrowser
 
+from scipy.stats import argus
+
 from lib import *
+from tools import *
 from spaces import *
 from vehicles import *
 from controllers import *
-from tools.dataStorage import *
-from tools.randomPoints import *
 
 
 # 3D plot and animation parameters where browser = {firefox,chrome,safari,etc.}
@@ -37,14 +38,14 @@ if __name__ == '__main__':
                             help='set parameters of animation x2')
     main_param.add_argument('--disable-animation', action='store_true', dest='not_animated', default=False,
                             help='enable picture only mode, disable animation')
-    main_param.add_argument('-space', '--space-file', dest='space_filename', default='space.json', help='')
+    main_param.add_argument('-peaks', '--peaks-file', dest='peaks_filename', default='peaks.json', help='')
     main_param.add_argument('--cache-dir', dest='cache_dir', default='data', help='')
     # do not store in config file
     main_param.add_argument('-c', '--config-file', dest='config_filename', default='', help='')
 
     sym_param = parser.add_argument_group('simulation parameters')
-    sym_param.add_argument('--space-type', metavar='space_type', default='', dest='space_type', type=str,
-                           help='a keyword describing the type of curve defining the space of the concentration field.'
+    sym_param.add_argument('--peak-type', metavar='peak_type', default='gaussian', dest='peak_type', type=str,
+                           help='a keyword describing the type of curve defining the peak of the concentration field.'
                                 'In fact, the derivative of the concentration function at the boundary of the isoline depends on this. '
                                 'It can be parabolic and gaussian')
     sym_param.add_argument('-raw', '--store-raw', action='store_true', dest='store_raw', default=False,
@@ -73,7 +74,7 @@ if __name__ == '__main__':
     #print(vars(args))
     if not args.config_filename:
         arguments = Arguments(**vars(args))
-        arguments.shift_field = [5, 5]
+        arguments.shift_field = [5, 5, -10]
         arguments.shift_vehicle = [-10, -10]
     else:
         arguments = read_and_assign_arguments(args.config_filename)
@@ -81,15 +82,13 @@ if __name__ == '__main__':
     ###############################################################################
     # Vehicle constructors
     ###############################################################################
-    # printSimInfo()
-
-    vehicles = [Otter(V_current=arguments.V_current, beta_current=arguments.beta_current) for _ in range(arguments.catamarans)]
-    # printVehicleinfo(vehicle, args.sample_time, args.N)
-
-    # plotVehicleStates(simTime, simData, 1)
-    # plotControls(simTime, simData, vehicle, 2)
-    # [simTime, simData] = simulate(args.N, args.sample_time, vehicle)
-    # plot3D(simData, grid_size, FPS, filename, 3)
+    vehicles = [Otter(V_current=arguments.V_current,
+                      beta_current=arguments.beta_current,
+                      serial_number=i,
+                      shift=arguments.shift_vehicle,
+                      color=next(color_generator()),
+                      starting_point=next(point_generator(arguments.radius, arguments.catamarans))) for i in range(arguments.catamarans)]
+    printVehicleinfo(vehicles[0], args.sample_time, args.N)
 
     """ Uncomment the line below for 3D animation in the web browser. 
     Alternatively, open the animated GIF file manually in your preferred browser. """
@@ -98,42 +97,33 @@ if __name__ == '__main__':
         clean_data()
     if arguments.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
-    start_points = [arguments.shift_vehicle]
-    if arguments.space_type == 'parabolic':
+    if arguments.peak_type == 'parabolic':
         space = Parabolic3DSpace(grid_size=arguments.grid_size,
-                                 shift_x=arguments.shift_field[0],
-                                 shift_y=arguments.shift_field[1],
-                                 shift_z=-10,
-                                 space_filename=arguments.space_filename)
-    else:
+                                 shift_xyz=arguments.shift_xyz,
+                                 space_filename=arguments.peaks_filename)
+    elif arguments.peak_type == 'gaussian':
         space = Gaussian3DSpace(grid_size=arguments.grid_size,
-                                shift_x=arguments.shift_field[0],
-                                shift_y=arguments.shift_field[1],
-                                shift_z=-10,
-                                space_filename=arguments.space_filename)
-        arguments.space_type = "gaussian"
+                                shift_xyz=arguments.shift_xyz,
+                                space_filename=arguments.peaks_filename)
 
     space.set_contour_points(tol=1)
-
+    print(arguments.peak_type)
     for i in range(arguments.cycles):
-        if arguments.catamarans > 1:
-            start_points = generate_random_points(arguments.radius, arguments.catamarans)
-            start_points[0][0] += arguments.shift_vehicle[0]
-            start_points[0][1] += arguments.shift_vehicle[1]
         timestamped_suffix: str = create_timestamped_suffix()
-        timestamped_folder: str = create_timestamped_folder(arguments.space_type,
+        timestamped_folder: str = create_timestamped_folder(space.type,
                                                             f"s{i + 1}",
                                                             timestamped_suffix=timestamped_suffix)
         controller = IntensityBasedController(timestamped_folder=timestamped_folder,
                                               timestamped_suffix=timestamped_suffix,
                                               vehicles=vehicles,
                                               N=arguments.N+1,
-                                              starting_points=start_points,
                                               sample_time=arguments.sample_time,
                                               space=space)
 
-        [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles, initial_positions=start_points, N=arguments.N,
-                                                     sample_time=arguments.sample_time, controller=controller)
+        [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles,
+                                                     N=arguments.N,
+                                                     sample_time=arguments.sample_time,
+                                                     controller=controller)
         controller.plotting_intensity()
         controller.plotting_sigma()
         controller.plotting_quality()

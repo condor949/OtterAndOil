@@ -1,6 +1,8 @@
 import numpy as np
 from abc import ABC
 import matplotlib.pyplot as plt
+from scipy.fftpack import shift
+
 from tools.dataStorage import *
 from collections.abc import Sequence
 
@@ -26,9 +28,25 @@ class Peak:
                     "sigma_y": self.sigma_y
                }
 
+class ShiftingSpace:
+    def __init__(self, shift_xyz=None):
+        if shift_xyz is None:
+            self.shift_xyz = [0, 0, 0]
+        else:
+            self.shift_xyz = shift_xyz
+
+    def shift_x(self):
+        return self.shift_xyz[0]
+
+    def shift_y(self):
+        return self.shift_xyz[1]
+
+    def shift_z(self):
+        return self.shift_xyz[2]
+
 
 class BaseSpace(ABC):
-    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_x=0, shift_y=0, shift_z=0, space_filename=""):
+    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_xyz=None, space_filename=""):
         """
         Initialize the 3D space.
 
@@ -36,16 +54,13 @@ class BaseSpace(ABC):
         x_range (tuple): Range of x-axis values.
         y_range (tuple): Range of y-axis values.
         grid_size (int): Number of points in each dimension.
-        shift_x (int): Shift of all points along the x-axis.
-        shift_y (int): Shift of all points along the y-axis.
+        shift_xyz (int): Shift of all points of space by values from this array, respectively XYZ.
         """
         self.x = np.linspace(*x_range, grid_size)
         self.y = np.linspace(*y_range, grid_size)
         self.X, self.Y = np.meshgrid(self.x, self.y)
         self.Z = np.zeros_like(self.X)  # Start with a flat surface
-        self.shift_x = shift_x
-        self.shift_y = shift_y
-        self.shift_z = shift_z
+        self.shift_xyz = ShiftingSpace(shift_xyz)
         self.interp = None
         self.contour_points = list()
         self.peaks = list()

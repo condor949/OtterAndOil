@@ -31,6 +31,25 @@ def generate_random_points(radius: int, num_points: int):
     return np.array(points)
 
 
+def point_generator(radius: int, num_points: int):
+    # Angle between two points in radians (360 degrees divided by number of points)
+    # TODO: rewrite to evenly distributed points by radius
+    # angle_step = 2 * np.pi / num_points
+    for n in range(num_points):
+        # Calculate the angle for the i-th point
+        # angle = n * angle_step
+        angle = random.uniform(0, 2 * np.pi)
+
+        # Random radius, slightly more or less than the given radius
+        r = random.uniform(0.1 * radius, 1.0 * radius)
+
+        # Convert polar coordinates to Cartesian coordinates
+        x = r * np.cos(angle)
+        y = r * np.sin(angle)
+
+        yield x, y
+
+
 def color_generator():
     """
     Generates a new color for a graph.

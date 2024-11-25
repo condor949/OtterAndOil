@@ -85,11 +85,11 @@ class Arguments:
         self.big_picture = arguments["big_picture"]
         self.not_animated = arguments["not_animated"]
         self.store_raw = arguments["store_raw"]
-        self.space_filename = arguments["space_filename"]
+        self.peaks_filename = arguments["peaks_filename"]
         self.cache_dir = arguments["cache_dir"]
-        self.space_type = arguments["space_type"]
+        self.peak_type = arguments["peak_type"]
         self.shift_vehicle = arguments["shift_vehicle"]
-        self.shift_field = arguments["shift_field"]
+        self.shift_xyz = arguments["shift_xyz"]
         self.N = arguments["N"]
         self.sample_time = arguments["sample_time"]
         self.cycles = arguments["cycles"]
@@ -106,11 +106,11 @@ class Arguments:
                     "big_picture": self.big_picture,
                     "not_animated": self.not_animated,
                     "store_raw": self.store_raw,
-                    "space_filename": self.space_filename,
+                    "peaks_filename": self.peaks_filename,
                     "cache_dir": self.cache_dir,
-                    "space_type": self.space_type,
+                    "peak_type": self.peak_type,
                     "shift_vehicle": self.shift_vehicle,
-                    "shift_field": self.shift_field,
+                    "shift_xyz": self.shift_xyz,
                     "N": self.N,
                     "sample_time": self.sample_time,
                     "cycles": self.cycles,

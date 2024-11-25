@@ -7,11 +7,11 @@ from tools.dataStorage import *
 
 
 class IntensityBasedController(BaseController):
-    def __init__(self, timestamped_folder, timestamped_suffix, vehicles, N, starting_points, sample_time, space: BaseSpace, f0=0, mu=0.5):
+    def __init__(self, timestamped_folder, timestamped_suffix, vehicles, N, sample_time, space: BaseSpace, f0=0, mu=0.5):
         super().__init__()
         self.timestamped_folder = timestamped_folder
         self.timestamped_suffix = timestamped_suffix
-        self.m_f_prev = [space.get_intensity(point[0], point[1]) for point in starting_points]
+        self.m_f_prev = [space.get_intensity(vehicle.starting_point[0], vehicle.starting_point[1]) for vehicle in vehicles]
         self.sample_time = sample_time
         self.f0 = f0
         self.mu = mu
@@ -66,6 +66,7 @@ class IntensityBasedController(BaseController):
             plt.ylabel('Control', fontsize=12)
             plt.title("Control",
                        fontsize=10)
+            plt.legend()
             plt.savefig(os.path.join(self.timestamped_folder,
                                      create_timestamped_filename_ext(f'sigmas_v{vehicle}',
                                                                      self.timestamped_suffix,
