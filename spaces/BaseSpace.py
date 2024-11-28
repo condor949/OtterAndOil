@@ -35,6 +35,14 @@ class ShiftingSpace:
         else:
             self.shift_xyz = shift_xyz
 
+    def __repr__(self):
+        return self.shift_xyz
+
+    def __str__(self):
+        return (f"shift_x={self.shift_x()}\n"
+                f"shift_y={self.shift_y()}\n"
+                f"shift_z={self.shift_z()}\n")
+
     def shift_x(self):
         return self.shift_xyz[0]
 
@@ -61,6 +69,7 @@ class BaseSpace(ABC):
         self.X, self.Y = np.meshgrid(self.x, self.y)
         self.Z = np.zeros_like(self.X)  # Start with a flat surface
         self.shift_xyz = ShiftingSpace(shift_xyz)
+        print(shift_xyz)
         self.interp = None
         self.contour_points = list()
         self.peaks = list()
@@ -99,6 +108,7 @@ class BaseSpace(ABC):
                                  create_timestamped_filename_ext(self.type,
                                                                  suffix,
                                                                  "png")))
+        plt.show()
         plt.close()
 
     def get_json_data(self):

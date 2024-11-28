@@ -29,7 +29,7 @@ class CircleWorker(QThread):
             for _ in range(max_attempts):
                 x = np.random.randint(0, self.width)
                 y = np.random.randint(0, self.height)
-                r = np.random.randint(10, 50)
+                r = np.random.randint(20, 100)
 
                 if self.is_circle_inside_polygon(x, y, r) and self.is_non_overlapping_circle(circles, x, y, r):
                     circles.append((x, y, r))
@@ -134,13 +134,13 @@ class DrawingArea(QWidget):
         # Convert circles to the required format and save to JSON
         circle_data = []
         for x, y, r in self.circles:
-            amplitude = (r / 50) * 30 # Amplitude is proportional to the radius, max is 50 for max radius
+            amplitude = (r / 100) * 30 # Amplitude is proportional to the radius, max is 50 for max radius
             circle_data.append({
-                "x0": int((x-300)/10),
-                "y0": int((y-250)/10),
+                "x0": int((x-250)/8),
+                "y0": int((y-300)/8),
                 "amplitude": 10+int(amplitude),
-                "sigma_x": r*0.1,
-                "sigma_y": r*0.1
+                "sigma_x": r*0.2,
+                "sigma_y": r*0.2
             })
 
         # Write to JSON file

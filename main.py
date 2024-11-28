@@ -86,7 +86,7 @@ if __name__ == '__main__':
                       shift=arguments.shift_vehicle,
                       color=next(color_generator()),
                       starting_point=next(point_generator(arguments.radius, arguments.catamarans))) for i in range(arguments.catamarans)]
-    printVehicleinfo(vehicles[0], args.sample_time, args.N)
+    printVehicleinfo(vehicles[0], arguments.sample_time, arguments.N)
 
     """ Uncomment the line below for 3D animation in the web browser. 
     Alternatively, open the animated GIF file manually in your preferred browser. """
@@ -105,12 +105,15 @@ if __name__ == '__main__':
                                 space_filename=arguments.peaks_filename)
 
     space.set_contour_points(tol=1)
-    #print(arguments.peak_type)
+
+    print(arguments.peak_type)
     for i in range(arguments.cycles):
         timestamped_suffix: str = create_timestamped_suffix()
         timestamped_folder: str = create_timestamped_folder(space.type,
                                                             f"s{i + 1}",
                                                             timestamped_suffix=timestamped_suffix)
+        print(timestamped_folder)
+        space.plotting_surface(timestamped_folder, timestamped_suffix)
         controller = IntensityBasedController(timestamped_folder=timestamped_folder,
                                               timestamped_suffix=timestamped_suffix,
                                               vehicles=vehicles,
@@ -133,7 +136,6 @@ if __name__ == '__main__':
                space,
                arguments.big_picture,
                arguments.not_animated)
-        space.plotting_surface(timestamped_folder, timestamped_suffix)
 
         arguments.store_in_config(timestamped_folder, timestamped_suffix)
         space.store_in_config(timestamped_folder, timestamped_suffix)

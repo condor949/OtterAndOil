@@ -29,7 +29,6 @@ class Gaussian3DSpace(BaseSpace):
         #     for j in range(len(self.X[i])):
         #         if self.Z[i, j] < 0:
         #             self.Z[i, j] = 0
-        #print(self.Z)
         self.Z += self.shift_xyz.shift_z()
         self.type = "gaussian"
 
@@ -48,9 +47,9 @@ class Gaussian3DSpace(BaseSpace):
             intensity += peak.amplitude * np.exp(-((x_current - peak.x0 - self.shift_xyz.shift_x()) ** 2 / (2 * peak.sigma_x ** 2) +
                                     (y_current - peak.y0 - self.shift_xyz.shift_y()) ** 2 / (2 * peak.sigma_y ** 2)))
         # Corrects the error if the graph has a concave part below zero. All points below zero become zero.
-        for i in range(len(self.X)):
-            for j in range(len(self.X[i])):
-                if self.Z[i, j] < 0:
-                    self.Z[i, j] = 0
+        # for i in range(len(self.X)):
+        #     for j in range(len(self.X[i])):
+        #         if self.Z[i, j] < 0:
+        #             self.Z[i, j] = 0
         intensity += self.shift_xyz.shift_z()
         return intensity

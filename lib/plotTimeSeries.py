@@ -180,9 +180,11 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
 
     plane_z = 0
     # ax = fig.add_subplot(111, projection='3d')
-    ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.5)
-    ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red')  # Intersection line
-    #ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[-9], colors='orange')
+    # ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.5)
+    ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red') # Intersection line
+    # print(space.contour_points[: 0])
+    # ax.plot(np.array([point[0] for point in space.contour_points]), np.array([point[1] for point in space.contour_points]), color='green')
+    ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[-9], colors='orange')
     # Animation function
     def anim_function(num, plotData):
         for line, dataSet in plotData.items():
@@ -235,7 +237,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
                                  create_timestamped_filename_ext('track',
                                                                  suffix,
                                                                  "png")))
-        #plt.show()
+        plt.show()
 
     # Create the animation object
     ani = animation.FuncAnimation(fig,
