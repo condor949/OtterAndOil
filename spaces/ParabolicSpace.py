@@ -3,7 +3,7 @@ from spaces import BaseSpace
 
 
 class Parabolic3DSpace(BaseSpace):
-    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_xyz=None, space_filename=""):
+    def __init__(self, x_range=(-50, 50), y_range=(-50, 50), grid_size=500, shift_xyz=None, space_filename=""):
         """
         Initialize the 3D Parabolic space.
 

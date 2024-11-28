@@ -8,8 +8,6 @@ import os
 import argparse
 import webbrowser
 
-from scipy.stats import argus
-
 from lib import *
 from tools import *
 from spaces import *
@@ -107,7 +105,7 @@ if __name__ == '__main__':
                                 space_filename=arguments.peaks_filename)
 
     space.set_contour_points(tol=1)
-    print(arguments.peak_type)
+    #print(arguments.peak_type)
     for i in range(arguments.cycles):
         timestamped_suffix: str = create_timestamped_suffix()
         timestamped_folder: str = create_timestamped_folder(space.type,

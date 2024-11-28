@@ -3,7 +3,7 @@ from spaces import BaseSpace
 
 
 class Gaussian3DSpace(BaseSpace):
-    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_xyz=None, space_filename=""):
+    def __init__(self, x_range=(-50, 50), y_range=(-50, 50), grid_size=500, shift_xyz=None, space_filename=""):
         """
         Initialize the 3D Gaussian space.
 
@@ -25,11 +25,11 @@ class Gaussian3DSpace(BaseSpace):
         for peak in self.peaks:
             self.Z += peak.amplitude * np.exp(-((self.X - peak.x0 - self.shift_xyz.shift_x()) ** 2 / (2 * peak.sigma_x ** 2) +
                                                 (self.Y - peak.y0 - self.shift_xyz.shift_y()) ** 2 / (2 * peak.sigma_y ** 2)))
-        for i in range(len(self.X)):
-            for j in range(len(self.X[i])):
-                if self.Z[i, j] < 0:
-                    self.Z[i, j] = 0
-        # print(self.Z)
+        # for i in range(len(self.X)):
+        #     for j in range(len(self.X[i])):
+        #         if self.Z[i, j] < 0:
+        #             self.Z[i, j] = 0
+        #print(self.Z)
         self.Z += self.shift_xyz.shift_z()
         self.type = "gaussian"
 
