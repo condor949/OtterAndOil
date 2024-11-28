@@ -11,7 +11,7 @@ class IntensityBasedController(BaseController):
         super().__init__()
         self.timestamped_folder = timestamped_folder
         self.timestamped_suffix = timestamped_suffix
-        self.m_f_prev = [space.get_intensity(vehicle.starting_point[0], vehicle.starting_point[1]) for vehicle in vehicles]
+        self.m_f_prev = [space.get_intensity(vehicle.starting_point[1], vehicle.starting_point[0]) for vehicle in vehicles]
         self.sample_time = sample_time
         self.f0 = f0
         self.mu = mu
@@ -32,7 +32,7 @@ class IntensityBasedController(BaseController):
 
 
     def generate_control(self, vehicles, positions, step):
-        m_f_current = [self.space.get_intensity(eta[0], eta[1]) for eta in positions]
+        m_f_current = [self.space.get_intensity(eta[1], eta[0]) for eta in positions]
         # self.quality_array.append([self.space.get_nearest_contour_point_norm(eta[0], eta[1]) for eta in positions])
         controls = []
         for vehicle in range(self.number_of_vehicles):

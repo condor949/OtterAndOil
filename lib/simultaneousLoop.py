@@ -10,7 +10,6 @@ def simultaneous_simulate(vehicles: Sequence, N: int, sample_time: float, contro
     DOF = 6  # degrees of freedom
     t = 0  # initial simulation time
 
-    number_of_vehicles = len(vehicles)
     m_nu = []
     m_u_actual = []
     m_eta = []
@@ -18,7 +17,7 @@ def simultaneous_simulate(vehicles: Sequence, N: int, sample_time: float, contro
     # Initial state vectors
     for vehicle in vehicles:
         # position/attitude, user editable
-        m_eta.append(np.array([vehicle.starting_point[0], vehicle.starting_point[1], 0, 0, 0, 0], float))
+        m_eta.append(np.array([vehicle.starting_point[1], vehicle.starting_point[0], 0, 0, 0, 0], float))
 
         # velocity, defined by vehicle class
         m_nu.append(vehicle.nu)
