@@ -2,22 +2,24 @@ import sys
 import numpy as np
 import json
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QSlider, QHBoxLayout, QProgressBar
+    QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QSlider, QHBoxLayout, QProgressBar, QFrame
 )
 from PyQt5.QtGui import QPainter, QColor, QPen, QBrush
 from PyQt5.QtCore import Qt, QPoint, QThread, pyqtSignal
+from PyQt5.QtWidgets import QSizePolicy
 
 
 class CircleWorker(QThread):
     progress = pyqtSignal(int)
     result = pyqtSignal(list)
 
-    def __init__(self, points, width, height, n_circles):
+    def __init__(self, points, width, height, n_circles, min_radius):
         super().__init__()
         self.points = points
         self.width = width
         self.height = height
         self.n_circles = n_circles
+        self.min_radius = min_radius
 
     def run(self):
         circles = []
@@ -29,7 +31,7 @@ class CircleWorker(QThread):
             for _ in range(max_attempts):
                 x = np.random.randint(0, self.width)
                 y = np.random.randint(0, self.height)
-                r = np.random.randint(20, 100)
+                r = np.random.randint(self.min_radius, 100)
 
                 if self.is_circle_inside_polygon(x, y, r) and self.is_non_overlapping_circle(circles, x, y, r):
                     circles.append((x, y, r))
@@ -69,7 +71,7 @@ class CircleWorker(QThread):
         for i in range(n):
             x1, y1 = self.points[i]
             x2, y2 = self.points[(i + 1) % n]
-            if ((y1 > y) != (y2 > y)) and (x < (x2 - x1) * (y - y1) / (y2 - y1) + x1):
+            if ((y1 > y) != (y2 > y)) and (x < ((x2 - x1) * (y - y1) / (y2 - y1) + x1)):
                 inside = not inside
         return inside
 
@@ -84,10 +86,10 @@ class CircleWorker(QThread):
 class DrawingArea(QWidget):
     def __init__(self):
         super().__init__()
-        self.setFixedSize(500, 400)
         self.points = []
         self.closed = False
         self.circles = []
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -134,13 +136,13 @@ class DrawingArea(QWidget):
         # Convert circles to the required format and save to JSON
         circle_data = []
         for x, y, r in self.circles:
-            amplitude = (r / 100) * 30 # Amplitude is proportional to the radius, max is 50 for max radius
+            amplitude = (r / 100) * 30  # Amplitude is proportional to the radius, max is 50 for max radius
             circle_data.append({
-                "x0": int((x-250)/8),
-                "y0": int((y-300)/8),
-                "amplitude": 10+int(amplitude),
-                "sigma_x": r*0.2,
-                "sigma_y": r*0.2
+                "x0": int((x - self.width() / 2) / 8),
+                "y0": int((y - self.height() / 2) / 8),
+                "amplitude": 10 + int(amplitude),
+                "sigma_x": r * 0.2,
+                "sigma_y": r * 0.2
             })
 
         # Write to JSON file
@@ -152,28 +154,55 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Drawing Area with Circles")
-        self.setGeometry(100, 100, 600, 500)
+        self.width = 600
+        self.height = 600
+        self.setGeometry(100, 100, self.width, self.height)
 
         main_layout = QVBoxLayout()
+
+        # Create a frame to hold the drawing area
+        frame = QFrame()
+        frame.setFrameShape(QFrame.Box)
+        frame.setLineWidth(2)
+        frame.setStyleSheet("border: 2px solid black;")
+
+        frame_layout = QVBoxLayout()
+        frame_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+        frame_layout.setSpacing(0)  # Remove spacing
+
         self.drawing_area = DrawingArea()
+        frame_layout.addWidget(self.drawing_area)
+        frame.setLayout(frame_layout)
 
-        clear_button = QPushButton("Clear")
-        clear_button.clicked.connect(self.drawing_area.clear)
+        self.clear_button = QPushButton("Clear")
+        self.clear_button.setStyleSheet("background-color: lightgray;")
+        self.clear_button.clicked.connect(self.clear_drawing)
 
-        closure_button = QPushButton("Close Shape")
-        closure_button.clicked.connect(self.drawing_area.close_shape)
+        self.closure_button = QPushButton("Close Shape")
+        self.closure_button.setStyleSheet("background-color: lightgray;")
+        self.closure_button.clicked.connect(self.close_shape)
 
-        circles_button = QPushButton("Circles")
-        circles_button.clicked.connect(self.generate_circles)
+        self.circles_button = QPushButton("Circles")
+        self.circles_button.setStyleSheet("background-color: lightgray;")
+        self.circles_button.clicked.connect(self.generate_circles)
+        self.circles_button.setEnabled(False)  # Initially inactive
 
-        save_button = QPushButton("Save Circles to JSON")
-        save_button.clicked.connect(self.save_circles)
+        self.save_button = QPushButton("Save Circles to JSON")
+        self.save_button.setStyleSheet("background-color: lightgray;")
+        self.save_button.clicked.connect(self.save_circles)
+        self.save_button.setEnabled(False)  # Initially inactive
 
-        slider_label = QLabel("Number of Circles:")
+        slider_label = QLabel("Circles:")
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(10)
         self.slider.setMaximum(500)
         self.slider.setValue(50)
+
+        min_radius_label = QLabel("Min Radius:")
+        self.min_radius_slider = QSlider(Qt.Horizontal)
+        self.min_radius_slider.setMinimum(2)
+        self.min_radius_slider.setMaximum(20)
+        self.min_radius_slider.setValue(5)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
@@ -182,13 +211,27 @@ class MainWindow(QMainWindow):
         slider_layout.addWidget(slider_label)
         slider_layout.addWidget(self.slider)
 
-        main_layout.addWidget(self.drawing_area)
-        main_layout.addWidget(clear_button)
-        main_layout.addWidget(closure_button)
-        main_layout.addWidget(circles_button)
-        main_layout.addWidget(save_button)
+        min_radius_layout = QHBoxLayout()
+        min_radius_layout.addWidget(min_radius_label)
+        min_radius_layout.addWidget(self.min_radius_slider)
+
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addWidget(self.clear_button)
+        buttons_layout.addWidget(self.closure_button)
+        buttons_layout.addWidget(self.circles_button)
+        buttons_layout.addWidget(self.save_button)
+
+        # Exit button
+        exit_button = QPushButton("Exit")
+        exit_button.setStyleSheet("background-color: red; color: white;")
+        exit_button.clicked.connect(self.close)
+
+        main_layout.addWidget(frame)  # Add the framed drawing area
+        main_layout.addLayout(buttons_layout)
         main_layout.addLayout(slider_layout)
+        main_layout.addLayout(min_radius_layout)
         main_layout.addWidget(self.progress_bar)
+        main_layout.addWidget(exit_button)
 
         container = QWidget()
         container.setLayout(main_layout)
@@ -196,6 +239,7 @@ class MainWindow(QMainWindow):
 
     def generate_circles(self):
         n_circles = self.slider.value()
+        min_radius = self.min_radius_slider.value()
         points = self.drawing_area.points
         width = self.drawing_area.width()
         height = self.drawing_area.height()
@@ -203,13 +247,28 @@ class MainWindow(QMainWindow):
         if not points or not self.drawing_area.closed:
             return
 
-        self.worker = CircleWorker(points, width, height, n_circles)
+        self.worker = CircleWorker(points, width, height, n_circles, min_radius)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.result.connect(self.drawing_area.set_circles)
+        self.worker.result.connect(self.enable_save_button)
         self.worker.start()
 
     def save_circles(self):
         self.drawing_area.save_circles_to_json()
+
+    def clear_drawing(self):
+        self.drawing_area.clear()
+        self.circles_button.setEnabled(False)
+        self.save_button.setEnabled(False)
+        self.progress_bar.setValue(0)
+
+    def close_shape(self):
+        self.drawing_area.close_shape()
+        self.circles_button.setEnabled(True)
+
+    def enable_save_button(self, circles):
+        self.save_button.setEnabled(True)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
