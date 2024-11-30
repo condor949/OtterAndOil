@@ -1,12 +1,15 @@
 import sys
 import numpy as np
 import json
+
+from PIL.ImageOps import scale
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QSlider, QHBoxLayout, QProgressBar, QFrame
+    QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel,
+    QSlider, QHBoxLayout, QProgressBar, QFrame, QButtonGroup, QRadioButton,
+    QSizePolicy
 )
 from PyQt5.QtGui import QPainter, QColor, QPen, QBrush
 from PyQt5.QtCore import Qt, QPoint, QThread, pyqtSignal
-from PyQt5.QtWidgets import QSizePolicy
 
 
 class CircleWorker(QThread):
@@ -132,17 +135,17 @@ class DrawingArea(QWidget):
         self.circles = circles
         self.update()
 
-    def save_circles_to_json(self, filename="peaks.json"):
+    def save_circles_to_json(self, spread, scale, filename="peaks.json"):
         # Convert circles to the required format and save to JSON
         circle_data = []
         for x, y, r in self.circles:
-            amplitude = (r / 100) * 30  # Amplitude is proportional to the radius, max is 50 for max radius
+            amplitude = int((r / 100) * 30 + 10)  # Amplitude is proportional to the radius, max is 50 for max radius
             circle_data.append({
-                "x0": int((x - self.width() / 2) / 8),
-                "y0": int((y - self.height() / 2) / 8),
-                "amplitude": 10 + int(amplitude),
-                "sigma_x": r * 0.2,
-                "sigma_y": r * 0.2
+                "x0": int((x - self.width() / 2) / spread),
+                "y0": int((y - self.height() / 2) / spread),
+                "amplitude": amplitude,
+                "sigma_x": r * scale,
+                "sigma_y": r * scale
             })
 
         # Write to JSON file
@@ -187,33 +190,57 @@ class MainWindow(QMainWindow):
         self.circles_button.clicked.connect(self.generate_circles)
         self.circles_button.setEnabled(False)  # Initially inactive
 
+        # Radio Buttons
+        self.radio_group = QButtonGroup()
+        self.radio2 = QRadioButton("1:2")
+        self.radio4 = QRadioButton("1:4")
+        self.radio8 = QRadioButton("1:8")
+
+        self.radio_group.addButton(self.radio2, 2)
+        self.radio_group.addButton(self.radio4, 4)
+        self.radio_group.addButton(self.radio8, 8)
+
+        radio_layout = QHBoxLayout()
+        radio_layout.addWidget(self.radio2)
+        radio_layout.addWidget(self.radio4)
+        radio_layout.addWidget(self.radio8)
+
         self.save_button = QPushButton("Save Circles to JSON")
         self.save_button.setStyleSheet("background-color: lightgray;")
         self.save_button.clicked.connect(self.save_circles)
         self.save_button.setEnabled(False)  # Initially inactive
 
-        slider_label = QLabel("Circles:")
+        # Number of Circles slider
+        slider_label = QLabel("Num Circles:")
         self.slider = QSlider(Qt.Horizontal)
         self.slider.setMinimum(10)
         self.slider.setMaximum(500)
         self.slider.setValue(50)
+        self.slider_value_label = QLabel("50")
+        self.slider.valueChanged.connect(self.update_slider_label)
 
+        # Minimal Radius slider
         min_radius_label = QLabel("Min Radius:")
         self.min_radius_slider = QSlider(Qt.Horizontal)
         self.min_radius_slider.setMinimum(2)
         self.min_radius_slider.setMaximum(20)
         self.min_radius_slider.setValue(5)
+        self.min_radius_slider_value_label = QLabel("5")
+        self.min_radius_slider.valueChanged.connect(self.update_min_radius_slider_label)
 
+        # Progress Bar of drawing circles
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
 
         slider_layout = QHBoxLayout()
         slider_layout.addWidget(slider_label)
         slider_layout.addWidget(self.slider)
+        slider_layout.addWidget(self.slider_value_label)
 
         min_radius_layout = QHBoxLayout()
         min_radius_layout.addWidget(min_radius_label)
         min_radius_layout.addWidget(self.min_radius_slider)
+        min_radius_layout.addWidget(self.min_radius_slider_value_label)
 
         buttons_layout = QHBoxLayout()
         buttons_layout.addWidget(self.clear_button)
@@ -228,6 +255,7 @@ class MainWindow(QMainWindow):
 
         main_layout.addWidget(frame)  # Add the framed drawing area
         main_layout.addLayout(buttons_layout)
+        main_layout.addLayout(radio_layout)
         main_layout.addLayout(slider_layout)
         main_layout.addLayout(min_radius_layout)
         main_layout.addWidget(self.progress_bar)
@@ -254,7 +282,18 @@ class MainWindow(QMainWindow):
         self.worker.start()
 
     def save_circles(self):
-        self.drawing_area.save_circles_to_json()
+        spread = 0
+        for button in self.radio_group.buttons():
+            if button.isChecked():
+                spread = self.radio_group.id(button)
+                break
+        if spread == 2:
+            scale = 0.8
+        elif spread == 4:
+            scale = 0.4
+        elif spread == 8:
+            scale = 0.2
+        self.drawing_area.save_circles_to_json(spread, scale)
 
     def clear_drawing(self):
         self.drawing_area.clear()
@@ -268,6 +307,12 @@ class MainWindow(QMainWindow):
 
     def enable_save_button(self, circles):
         self.save_button.setEnabled(True)
+
+    def update_min_radius_slider_label(self, value):
+        self.min_radius_slider_value_label.setText(str(value))
+
+    def update_slider_label(self, value):
+        self.slider_value_label.setText(str(value))
 
 
 if __name__ == "__main__":
