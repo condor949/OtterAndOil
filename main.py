@@ -38,6 +38,10 @@ if __name__ == '__main__':
                             help='enable picture only mode, disable animation')
     main_param.add_argument('-peaks', '--peaks-file', dest='peaks_filename', default='peaks.json', help='')
     main_param.add_argument('--cache-dir', dest='cache_dir', default='data', help='')
+    main_param.add_argument('-iso', '--isometric', action='store_true', dest='isometric', default=False,
+                            help='set isometric value for animation or static image of ships trajectory')
+    main_param.add_argument('--int', '--show-intensity', action='store_true', default='show_intensity',
+                            help='enable intensity surface in a trajectory plot')
     # do not store in config file
     main_param.add_argument('-c', '--config-file', dest='config_filename', default='', help='')
 
@@ -80,12 +84,16 @@ if __name__ == '__main__':
     ###############################################################################
     # Vehicle constructors
     ###############################################################################
+    if arguments.catamarans == 1:
+        starting_points = [[0, 0]]
+    else:
+        starting_points = [next(point_generator(arguments.radius, arguments.catamarans)) for _ in range(arguments.catamarans)]
     vehicles = [Otter(V_current=arguments.V_current,
                       beta_current=arguments.beta_current,
                       serial_number=i,
                       shift=arguments.shift_vehicle,
                       color=next(color_generator()),
-                      starting_point=next(point_generator(arguments.radius, arguments.catamarans))) for i in range(arguments.catamarans)]
+                      starting_point=starting_points[i]) for i in range(arguments.catamarans)]
     printVehicleinfo(vehicles[0], arguments.sample_time, arguments.N)
 
     """ Uncomment the line below for 3D animation in the web browser. 
@@ -103,6 +111,9 @@ if __name__ == '__main__':
         space = Gaussian3DSpace(grid_size=arguments.grid_size,
                                 shift_xyz=arguments.shift_xyz,
                                 space_filename=arguments.peaks_filename)
+    else:
+        print(f"ERROR parsing peak type: {arguments.peak_type}")
+        exit(1)
 
     space.set_contour_points(tol=1)
 
@@ -135,7 +146,9 @@ if __name__ == '__main__':
                timestamped_suffix,
                space,
                arguments.big_picture,
-               arguments.not_animated)
+               arguments.not_animated,
+               arguments.show_intensity,
+               arguments.isometric)
 
         arguments.store_in_config(timestamped_folder, timestamped_suffix)
         space.store_in_config(timestamped_folder, timestamped_suffix)

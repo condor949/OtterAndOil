@@ -85,6 +85,8 @@ class Arguments:
         self.big_picture = arguments["big_picture"]
         self.not_animated = arguments["not_animated"]
         self.store_raw = arguments["store_raw"]
+        self.show_intensity = arguments["show_intensity"]
+        self.isometric = arguments["isometric"]
         self.peaks_filename = arguments["peaks_filename"]
         self.cache_dir = arguments["cache_dir"]
         self.peak_type = arguments["peak_type"]
@@ -106,6 +108,8 @@ class Arguments:
                     "big_picture": self.big_picture,
                     "not_animated": self.not_animated,
                     "store_raw": self.store_raw,
+                    "show_intensity": self.show_intensity,
+                    "isometric": self.isometric,
                     "peaks_filename": self.peaks_filename,
                     "cache_dir": self.cache_dir,
                     "peak_type": self.peak_type,

@@ -119,7 +119,7 @@ class BaseSpace(ABC):
 
     def store_in_config(self, folder, suffix):
         with open(os.path.join(folder,
-                               create_timestamped_filename_ext(self.type,
+                               create_timestamped_filename_ext("space",
                                                                suffix,
                                                                "json")), 'w') as config:
             json.dump(self.get_json_data(), config, indent=4)

@@ -84,8 +84,10 @@ class Otter:
                     + " deg"
             )
         else:
-            self.controlDescription = "Step inputs for n1 and n2"
-            controlSystem = "stepInput"
+            self.controlDescription = "sigma"
+            controlSystem = "Berman Law"
+            # self.controlDescription = "Step inputs for n1 and n2"
+            # controlSystem = "stepInput"
 
         self.ref = r
         self.V_c = V_current

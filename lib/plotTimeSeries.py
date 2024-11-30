@@ -166,7 +166,11 @@ def plotControls(simTime, simData, vehicle, figNo):
 
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
-def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpace, big_picture: bool=False, not_animated: bool=False):
+def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpace,
+                   big_picture: bool=False,
+                   not_animated: bool=False,
+                   show_intensity: bool=False,
+                   isometric: bool=False):
     # Attaching 3D axis to the figure
     if big_picture:
         fig = plt.figure(figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
@@ -179,18 +183,23 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
     fig.add_axes(ax)
 
     plane_z = 0
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.5)
+
+    if show_intensity:
+        # Plot intensity surface
+        ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.5)
+
+    # Plot contour of target isoline
     ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red') # Intersection line
-    # print(space.contour_points[: 0])
+    # Plot calculated contour points
     # ax.plot(np.array([point[0] for point in space.contour_points]), np.array([point[1] for point in space.contour_points]), color='green')
-    ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[-9], colors='orange')
+    # Plot contour of intensity area
+    ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[space.shift_xyz.shift_z()+1], colors='orange')
+
     # Animation function
     def anim_function(num, plotData):
         for line, dataSet in plotData.items():
             line.set_data(dataSet[0:2, :num])
             line.set_3d_properties(dataSet[2, :num])
-            ax.view_init(elev=30.0, azim=-120.0)
         return plotData.keys()
 
     color_gen = color_generator()
@@ -223,8 +232,9 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
     # Plot 2D surface for z = 0
     [x_min, x_max] = ax.get_xlim()
     [y_min, y_max] = ax.get_ylim()
-    x_grid = np.arange(x_min - 10, x_max + 10)
-    y_grid = np.arange(y_min - 10, y_max + 10)
+    indent = 0
+    x_grid = np.arange(x_min - indent, x_max + indent)
+    y_grid = np.arange(y_min - indent, y_max + indent)
     [xx, yy] = np.meshgrid(x_grid, y_grid)
     zz = 0 * xx
     ax.plot_surface(xx, yy, zz, alpha=0.3)
@@ -232,29 +242,31 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
     # Title of plot
     ax.set_title('North-East-Down')
 
-    if not_animated:
-        plt.savefig(os.path.join(folder,
-                                 create_timestamped_filename_ext('track',
-                                                                 suffix,
-                                                                 "png")))
-        plt.show()
+    plt.savefig(os.path.join(folder,
+                             create_timestamped_filename_ext('track',
+                                                             suffix,
+                                                             "png")))
+    #plt.show()
 
-    # Create the animation object
-    ani = animation.FuncAnimation(fig,
-                                  partial(anim_function, plotData=plotData),
-                                  frames=numDataPoints,
-                                  interval=200,
-                                  blit=False,
-                                  repeat=True)
-    # Save the 3D animation as a gif file
-    update_func = lambda _i, _n: progress_bar.update(1)
-    with tqdm(total=getattr(ani, "_save_count"), desc="Animation Writing") as progress_bar:
-        try:
-            writer = animation.FFMpegWriter(fps=FPS)
-        except:
-            writer = animation.PillowWriter(fps=FPS)
+    if not not_animated:
+        # Create the animation object
+        if isometric:
+            ax.view_init(elev=30.0, azim=-120.0)
+        ani = animation.FuncAnimation(fig,
+                                      partial(anim_function, plotData=plotData),
+                                      frames=numDataPoints,
+                                      interval=200,
+                                      blit=False,
+                                      repeat=True)
+        # Save the 3D animation as a gif file
+        update_func = lambda _i, _n: progress_bar.update(1)
+        with tqdm(total=getattr(ani, "_save_count"), desc="Animation Writing") as progress_bar:
+            try:
+                writer = animation.FFMpegWriter(fps=FPS)
+            except:
+                writer = animation.PillowWriter(fps=FPS)
 
-        ani.save(os.path.join(folder,
-                              create_timestamped_filename_ext('track',
-                                                              suffix,
-                                                              "gif")), writer=writer, progress_callback=update_func)
+            ani.save(os.path.join(folder,
+                                  create_timestamped_filename_ext('track',
+                                                                  suffix,
+                                                                  "gif")), writer=writer, progress_callback=update_func)

@@ -58,9 +58,17 @@ class IntensityBasedController(BaseController):
         # print(array(self.der).shape)
         # print(array(self.mu_tanh).shape)
         # print(array(self.sigmas).shape)
+
+        result = np.copy(self.der)
+        for i, row in enumerate(result):
+            # Calculate the average for the row
+            avg = (np.min(row)+np.max(row))/2
+            # Replace values greater than the average with MAGIC_VALUE. For example 42
+            result[i] = [6 if val > avg else val for val in row]
+
         for vehicle in range(self.number_of_vehicles):
             plt.figure()
-            plt.plot(self.der[vehicle], label='Der')
+            plt.plot(result[vehicle], label='Der')
             plt.plot(self.mu_tanh[vehicle], label='Mu х Tanh')
             plt.xlabel('Time (s)', fontsize=12)
             plt.ylabel('Control', fontsize=12)

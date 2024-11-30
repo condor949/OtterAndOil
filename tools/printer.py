@@ -9,4 +9,5 @@ def printVehicleinfo(vehicle, sampleTime, N):
     print('%s' % (vehicle.controlDescription))
     print('Sampling frequency: %s Hz' % round(1 / sampleTime))
     print('Simulation time: %s seconds' % round(N * sampleTime))
+    print(f'Starting point: [{vehicle.starting_point[0]}, {vehicle.starting_point[1]}]')
     print('---------------------------------------------------------------------------------------')
