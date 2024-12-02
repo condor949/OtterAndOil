@@ -1,6 +1,8 @@
 import numpy as np
 import random
 
+from matplotlib.colors import to_hex
+
 
 def generate_random_points(radius: int, num_points: int):
     """
@@ -67,3 +69,11 @@ def color_generator():
     # After exhausting predefined colors, generate random colors
     while True:
         yield (random.random(), random.random(), random.random())
+
+def green_to_yellow(steps):
+    colors = []
+    steps += 1
+    for step in range(steps):
+        red_ratio = step / (steps - 1)  # Normalize to range [0, 1]
+        colors.append(to_hex([red_ratio, 1.0, 0.0]))   # RGB tuple
+    return colors

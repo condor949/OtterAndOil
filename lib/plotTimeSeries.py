@@ -18,7 +18,7 @@ from tqdm import tqdm
 from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
-from tools.randomPoints import color_generator
+from tools.randomPoints import color_generator, green_to_yellow
 from tools.dataStorage import *
 from functools import partial
 from spaces import BaseSpace
@@ -167,6 +167,7 @@ def plotControls(simTime, simData, vehicle, figNo):
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
 def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpace,
+                   zoning: int = 0,
                    big_picture: bool=False,
                    not_animated: bool=False,
                    show_intensity: bool=False,
@@ -190,6 +191,14 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
 
     # Plot contour of target isoline
     ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red') # Intersection line
+    if zoning > 0:
+        step = int(np.max(space.get_Z()) / zoning)
+        print(np.max(space.get_Z()))
+        # Example usage
+        colors = green_to_yellow(zoning)
+        for i in range(1, zoning):
+            ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=step, levels=[step*i], colors=colors[i-1])  # Intersection line
+        ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=step, levels=[int(np.max(space.get_Z()))], colors=colors[zoning])  # Intersection line
     # Plot calculated contour points
     # ax.plot(np.array([point[0] for point in space.contour_points]), np.array([point[1] for point in space.contour_points]), color='green')
     # Plot contour of intensity area
@@ -215,8 +224,11 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
         D = z[::len(x) // numDataPoints];
 
         dataSet = np.array([N, E, -D])  # Down is negative z
+        # Highlight the first point with an asterisk
+        color = next(color_gen)
+        plt.plot(dataSet[0][0], dataSet[1][0], marker='*', markersize=6, color=color, label='Start Point', zorder=10)
         # Line/trajectory plot
-        line = plt.plot(dataSet[0], dataSet[1], dataSet[2], lw=2, c=next(color_gen))[0]
+        line = plt.plot(dataSet[0], dataSet[1], dataSet[2], lw=2, c=color, zorder=10)[0]
         plotData[line] = dataSet
 
     # Setting the axes properties
@@ -228,6 +240,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
         ax.set_zlim3d([-np.amax(z), 20])
 
     ax.set_zlabel('-Z,m / Down')
+    ax.set_zticks([])
 
     # Plot 2D surface for z = 0
     [x_min, x_max] = ax.get_xlim()

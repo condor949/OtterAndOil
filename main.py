@@ -73,7 +73,7 @@ if __name__ == '__main__':
                             type=float, help='current direction (deg)')
 
     args = parser.parse_args()
-    #print(vars(args))
+
     if not args.config_filename:
         arguments = Arguments(**vars(args))
         arguments.shift_field = [5, 5, -10]
@@ -145,6 +145,7 @@ if __name__ == '__main__':
                timestamped_folder,
                timestamped_suffix,
                space,
+               arguments.zoning,
                arguments.big_picture,
                arguments.not_animated,
                arguments.show_intensity,
