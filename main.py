@@ -145,11 +145,9 @@ if __name__ == '__main__':
                timestamped_folder,
                timestamped_suffix,
                space,
-               arguments.zoning,
+               arguments.isolines,
                arguments.big_picture,
-               arguments.not_animated,
-               arguments.show_intensity,
-               arguments.isometric)
+               arguments.not_animated)
 
         arguments.store_in_config(timestamped_folder, timestamped_suffix)
         space.store_in_config(timestamped_folder, timestamped_suffix)

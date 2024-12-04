@@ -100,10 +100,10 @@ class BaseSpace(ABC):
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.plot_surface(self.X, self.Y, self.Z, cmap='viridis')
-        ax.set_xlabel('X-axis')
-        ax.set_ylabel('Y-axis')
-        ax.set_zlabel('Z-axis')
-        plt.title(f"3D {self.type} surface")
+        ax.set_xlabel('X,m / East')
+        ax.set_ylabel('Y,m / North')
+        ax.set_zlabel('Intensity')
+        plt.title(f"Intensity map, based on  {self.type} peaks")
         plt.savefig(os.path.join(folder,
                                  create_timestamped_filename_ext(self.type,
                                                                  suffix,

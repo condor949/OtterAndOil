@@ -29,7 +29,7 @@ def simultaneous_simulate(vehicles: Sequence, N: int, sample_time: float, contro
     sim_data = [np.empty([N+1, 2 * DOF + 2 * vehicle.dimU], float) for vehicle in vehicles]
 
     # Simulator for-loop
-    for i in tqdm(range(0, N + 1), desc="Vehicles Simulation"):
+    for i in tqdm(range(0, N + 1), desc=f"Vehicle Simulation x{len(vehicles)}"):
 
         m_u_control = controller.generate_control(vehicles, m_eta, i)
 

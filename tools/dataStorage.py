@@ -87,7 +87,7 @@ class Arguments:
         self.store_raw = arguments["store_raw"]
         self.show_intensity = arguments["show_intensity"]
         self.isometric = arguments["isometric"]
-        self.zoning = arguments["zoning"]
+        self.isolines = arguments["isolines"]
         self.peaks_filename = arguments["peaks_filename"]
         self.cache_dir = arguments["cache_dir"]
         self.peak_type = arguments["peak_type"]
@@ -111,7 +111,7 @@ class Arguments:
                     "store_raw": self.store_raw,
                     "show_intensity": self.show_intensity,
                     "isometric": self.isometric,
-                    "zoning": self.zoning,
+                    "isolines": self.isolines,
                     "peaks_filename": self.peaks_filename,
                     "cache_dir": self.cache_dir,
                     "peak_type": self.peak_type,

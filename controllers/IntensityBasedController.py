@@ -70,8 +70,8 @@ class IntensityBasedController(BaseController):
             plt.figure()
             plt.plot(result[vehicle], label='Der')
             plt.plot(self.mu_tanh[vehicle], label='Mu х Tanh')
-            plt.xlabel('Time (s)', fontsize=12)
-            plt.ylabel('Control', fontsize=12)
+            plt.xlabel('Steps', fontsize=12)
+            plt.ylabel('Control ', fontsize=12)
             plt.title("Control",
                        fontsize=10)
             plt.legend()
@@ -87,12 +87,12 @@ class IntensityBasedController(BaseController):
         #print(cumulative_quality.shape)
 
         plt.figure()
-        plt.xlabel('Time (s)', fontsize=12)
+        plt.xlabel('Steps', fontsize=12)
         plt.ylabel('Total integral', fontsize=12)
         plt.title('The total value of the shortest distance at each point of the trajectory',
                   fontsize=10)
         for i in range(self.number_of_vehicles):
-            plt.plot(cumulative_quality[i], label=f'Quality v{i+1}')
+            plt.plot(cumulative_quality[i], label=f'agent {i+1}')
         plt.legend()
         plt.savefig(os.path.join(self.timestamped_folder,
                                  create_timestamped_filename_ext('quality',
@@ -120,7 +120,7 @@ class IntensityBasedController(BaseController):
                 axes = [axes]  # Make it iterable if there is only one subplot
 
             for i, (intensities, ax) in enumerate(zip(self.intensity, axes)):
-                ax.plot(steps, intensities, label=f'Agent v{i + 1}', color=f'C{i}')
+                ax.plot(steps, intensities, label=f'Agent {i + 1}', color=f'C{i}')
                 ax.set_title(f'Agent {i + 1} Field Intensity Over Steps')
                 ax.set_xlabel('Steps')
                 ax.set_ylabel('Field Intensity')

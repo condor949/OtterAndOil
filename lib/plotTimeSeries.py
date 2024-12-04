@@ -167,11 +167,9 @@ def plotControls(simTime, simData, vehicle, figNo):
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
 # in figure no. figNo
 def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpace,
-                   zoning: int = 0,
+                   isolines: int = 0,
                    big_picture: bool=False,
-                   not_animated: bool=False,
-                   show_intensity: bool=False,
-                   isometric: bool=False):
+                   not_animated: bool=False):
     # Attaching 3D axis to the figure
     if big_picture:
         fig = plt.figure(figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
@@ -179,36 +177,60 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
     else:
         fig = plt.figure(figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
                          dpi=dpiValue)
-    ax = p3.Axes3D(fig, auto_add_to_figure=False)
-    ax.view_init(elev=90, azim=-90)
-    fig.add_axes(ax)
 
-    plane_z = 0
+    contour = plt.contour(space.get_X(), space.get_Y(), space.get_Z(), levels=isolines, cmap='viridis')  # Adjust `levels` to set number of isolines
 
-    if show_intensity:
-        # Plot intensity surface
-        ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.5)
+    plt.clabel(contour, inline=True, fontsize=10)  # Add labels to the isolines
+    plt.title('Track in the intensity field')
+    plt.xlabel('X,m / East')
+    plt.ylabel('Y,m / North')
+    plt.colorbar(contour, label='Intensity')  # Add a color bar for reference
+    plt.contour(space.get_X(), space.get_Y(), space.get_Z(), levels=0,
+               colors='red')  # Intersection line
+    #plt.show()
 
-    # Plot contour of target isoline
-    ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red') # Intersection line
-    if zoning > 0:
-        step = int(np.max(space.get_Z()) / zoning)
-        print(np.max(space.get_Z()))
+    # ax = p3.Axes3D(fig, auto_add_to_figure=False)
+    # ax.view_init(elev=90, azim=-90)
+    # fig.add_axes(ax)
+    #
+    # if show_intensity:
+    #     # Plot intensity surface
+    #     ax.plot_surface(space.get_X(), space.get_Y(), space.get_Z(), cmap='viridis', alpha=0.5)
+    #
+    # # Plot contour of target isoline
+    # ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[plane_z], colors='red') # Intersection line
+    # if zoning > 0:
+        # step = int(np.max(space.get_Z()) / zoning)
+        #print(np.max(space.get_Z()))
         # Example usage
-        colors = green_to_yellow(zoning)
-        for i in range(1, zoning):
-            ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=step, levels=[step*i], colors=colors[i-1])  # Intersection line
-        ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=step, levels=[int(np.max(space.get_Z()))], colors=colors[zoning])  # Intersection line
+        # colors = green_to_yellow(zoning)
+
+        # plt.colorbar(contour, label='Z-value')
+        # for i in range(1, zoning):
+        #
+        #     # Create the contour plot
+        #     plt.figure(figsize=(8, 6))
+        #     contour = plt.contour(X, Y, Z, levels=10, cmap='viridis')  # Adjust `levels` to set number of isolines
+        #     plt.clabel(contour, inline=True, fontsize=10)  # Add labels to the isolines
+        #     plt.title('Isoline Graph (Contour Plot)')
+        #     plt.xlabel('X-axis')
+        #     plt.ylabel('Y-axis')
+        #     plt.colorbar(contour, label='Z-value')  # Add a color bar for reference
+        #     ax.colorbar(contour, label='Z-value')  # Add a color bar for reference
+        #     plt.show()
+        #
+        #     ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=step, levels=[step*i], colors=colors[i-1])  # Intersection line
+        # ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=step, levels=[int(np.max(space.get_Z()))], colors=colors[zoning])  # Intersection line
     # Plot calculated contour points
     # ax.plot(np.array([point[0] for point in space.contour_points]), np.array([point[1] for point in space.contour_points]), color='green')
     # Plot contour of intensity area
-    ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[space.shift_xyz.shift_z()+1], colors='orange')
+    #ax.contour(space.get_X(), space.get_Y(), space.get_Z(), zdir='z', offset=plane_z, levels=[space.shift_xyz.shift_z()+1], colors='orange')
 
     # Animation function
     def anim_function(num, plotData):
         for line, dataSet in plotData.items():
             line.set_data(dataSet[0:2, :num])
-            line.set_3d_properties(dataSet[2, :num])
+            # line.set_3d_properties(dataSet[2, :num])
         return plotData.keys()
 
     color_gen = color_generator()
@@ -228,32 +250,32 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
         color = next(color_gen)
         plt.plot(dataSet[0][0], dataSet[1][0], marker='*', markersize=6, color=color, label='Start Point', zorder=10)
         # Line/trajectory plot
-        line = plt.plot(dataSet[0], dataSet[1], dataSet[2], lw=2, c=color, zorder=10)[0]
+        line = plt.plot(dataSet[0], dataSet[1], lw=2, c=color, zorder=10)[0]
         plotData[line] = dataSet
 
     # Setting the axes properties
-    ax.set_xlabel('X,m / East')
-    ax.set_ylabel('Y,m / North')
-    ax.set_zlim3d([-10, 30])  # default depth = -100 m
+    # ax.set_xlabel('X,m / East')
+    # ax.set_ylabel('Y,m / North')
+   # ax.set_zlim3d([-10, 30])  # default depth = -100 m
 
-    if np.amax(z) > 100.0:
-        ax.set_zlim3d([-np.amax(z), 20])
+    # if np.amax(z) > 100.0:
+    #     ax.set_zlim3d([-np.amax(z), 20])
 
-    ax.set_zlabel('-Z,m / Down')
-    ax.set_zticks([])
+   # ax.set_zlabel('Intensity')
+   # ax.set_zticks([])
 
     # Plot 2D surface for z = 0
-    [x_min, x_max] = ax.get_xlim()
-    [y_min, y_max] = ax.get_ylim()
-    indent = 0
-    x_grid = np.arange(x_min - indent, x_max + indent)
-    y_grid = np.arange(y_min - indent, y_max + indent)
-    [xx, yy] = np.meshgrid(x_grid, y_grid)
-    zz = 0 * xx
-    ax.plot_surface(xx, yy, zz, alpha=0.3)
+    # [x_min, x_max] = ax.get_xlim()
+    # [y_min, y_max] = ax.get_ylim()
+    # indent = 0
+    # x_grid = np.arange(x_min - indent, x_max + indent)
+    # y_grid = np.arange(y_min - indent, y_max + indent)
+    # [xx, yy] = np.meshgrid(x_grid, y_grid)
+    # zz = 0 * xx
+    # ax.plot_surface(xx, yy, zz, alpha=0.3)
 
     # Title of plot
-    ax.set_title('North-East-Down')
+    # ax.set_title('North-East-Down')
 
     plt.savefig(os.path.join(folder,
                              create_timestamped_filename_ext('track',
@@ -263,8 +285,8 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
 
     if not not_animated:
         # Create the animation object
-        if isometric:
-            ax.view_init(elev=30.0, azim=-120.0)
+        # if isometric:
+        #     ax.view_init(elev=30.0, azim=-120.0)
         ani = animation.FuncAnimation(fig,
                                       partial(anim_function, plotData=plotData),
                                       frames=numDataPoints,
