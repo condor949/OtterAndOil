@@ -106,11 +106,13 @@ if __name__ == '__main__':
     if arguments.peak_type == 'parabolic':
         space = Parabolic3DSpace(grid_size=arguments.grid_size,
                                  shift_xyz=arguments.shift_xyz,
-                                 space_filename=arguments.peaks_filename)
+                                 space_filename=arguments.peaks_filename,
+                                 target_isoline=arguments.target_isoline)
     elif arguments.peak_type == 'gaussian':
         space = Gaussian3DSpace(grid_size=arguments.grid_size,
                                 shift_xyz=arguments.shift_xyz,
-                                space_filename=arguments.peaks_filename)
+                                space_filename=arguments.peaks_filename,
+                                target_isoline=arguments.target_isoline)
     else:
         print(f"ERROR parsing peak type: {arguments.peak_type}")
         exit(1)

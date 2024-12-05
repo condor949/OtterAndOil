@@ -1,7 +1,6 @@
 import numpy as np
 from abc import ABC
 import matplotlib.pyplot as plt
-from scipy.fftpack import shift
 
 from tools.dataStorage import *
 from collections.abc import Sequence
@@ -54,7 +53,7 @@ class ShiftingSpace:
 
 
 class BaseSpace(ABC):
-    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_xyz=None, space_filename=""):
+    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_xyz=None, space_filename="", target_isoline=0):
         """
         Initialize the 3D space.
 
@@ -78,6 +77,7 @@ class BaseSpace(ABC):
                 data = json.load(file)
                 self.peaks = [Peak(**item) for item in data]
         self.type=""
+        self.target_isoline=target_isoline
 
     def set_contour_points(self, plane_z=0, tol=1e-8):
         cont = []

@@ -93,6 +93,7 @@ class Arguments:
         self.peak_type = arguments["peak_type"]
         self.shift_vehicle = arguments["shift_vehicle"]
         self.shift_xyz = arguments["shift_xyz"]
+        self.target_isoline=arguments["target_isoline"]
         self.N = arguments["N"]
         self.sample_time = arguments["sample_time"]
         self.cycles = arguments["cycles"]
@@ -117,6 +118,7 @@ class Arguments:
                     "peak_type": self.peak_type,
                     "shift_vehicle": self.shift_vehicle,
                     "shift_xyz": self.shift_xyz,
+                    "target_isoline": self.target_isoline,
                     "N": self.N,
                     "sample_time": self.sample_time,
                     "cycles": self.cycles,
