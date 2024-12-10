@@ -68,10 +68,10 @@ class IntensityBasedController(BaseController):
 
         for vehicle in range(self.number_of_vehicles):
             plt.figure()
-            plt.plot(result[vehicle], label='Der')
-            plt.plot(self.mu_tanh[vehicle], label='Mu х Tanh')
+            plt.plot(result[vehicle], label='Reaction')
+            plt.plot(self.mu_tanh[vehicle], label='Control')
             plt.xlabel('Steps', fontsize=12)
-            plt.ylabel('Control ', fontsize=12)
+            plt.ylabel('Sigma', fontsize=12)
             plt.title("Control",
                        fontsize=10)
             plt.legend()

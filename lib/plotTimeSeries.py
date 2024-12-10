@@ -184,7 +184,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
     plt.title('Track in the intensity field')
     plt.xlabel('X,m / East')
     plt.ylabel('Y,m / North')
-    plt.colorbar(contour, label='Intensity')  # Add a color bar for reference
+    #plt.colorbar(contour, label='Intensity')  # Add a color bar for reference
     plt.contour(space.get_X(), space.get_Y(), space.get_Z(), levels=[space.target_isoline],
                colors='red')  # Intersection line
     #plt.show()
