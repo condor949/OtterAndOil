@@ -13,18 +13,18 @@ import math
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.pyplot import legend
 from tqdm import tqdm
 from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
+from matplotlib import rc
 from tools.randomPoints import color_generator, green_to_yellow
 from tools.dataStorage import *
 from functools import partial
 from spaces import BaseSpace
 
-legendSize = 10
-figSize1 = [25, 13]  # figure1 size in cm
+legendSize = 16
+figSize1 = [25, 25]  # figure1 size in cm
 bigFigSize1 = [50, 26]  # larger figure1 size in cm
 figSize2 = [25, 13]  # figure2 size in cm
 dpiValue = 150  # figure dpi value
@@ -178,10 +178,11 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
         fig = plt.figure(figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
                          dpi=dpiValue)
 
+    rc('font', size=20)
     contour = plt.contour(space.get_X(), space.get_Y(), space.get_Z(), levels=isolines, cmap='viridis')  # Adjust `levels` to set number of isolines
 
-    plt.clabel(contour, inline=True, fontsize=10)  # Add labels to the isolines
-    plt.title('Track in the intensity field')
+    plt.clabel(contour, inline=True)  # Add labels to the isolines
+    # plt.title('Track in the intensity field')
     plt.xlabel('X,m / East')
     plt.ylabel('Y,m / North')
     #plt.colorbar(contour, label='Intensity')  # Add a color bar for reference

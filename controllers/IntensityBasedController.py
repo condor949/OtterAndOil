@@ -63,6 +63,7 @@ class IntensityBasedController(BaseController):
         for i, row in enumerate(result):
             # Calculate the average for the row
             avg = (np.min(row)+np.max(row))/2
+            print(avg)
             # Replace values greater than the average with MAGIC_VALUE. For example 42
             result[i] = [6 if val > avg else val for val in row]
 

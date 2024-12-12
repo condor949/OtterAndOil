@@ -104,12 +104,16 @@ if __name__ == '__main__':
     if arguments.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
     if arguments.peak_type == 'parabolic':
-        space = Parabolic3DSpace(grid_size=arguments.grid_size,
+        space = Parabolic3DSpace(x_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
+                                 y_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
+                                 grid_size=arguments.grid_size,
                                  shift_xyz=arguments.shift_xyz,
                                  space_filename=arguments.peaks_filename,
                                  target_isoline=arguments.target_isoline)
     elif arguments.peak_type == 'gaussian':
-        space = Gaussian3DSpace(grid_size=arguments.grid_size,
+        space = Gaussian3DSpace(x_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
+                                y_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
+                                grid_size=arguments.grid_size,
                                 shift_xyz=arguments.shift_xyz,
                                 space_filename=arguments.peaks_filename,
                                 target_isoline=arguments.target_isoline)

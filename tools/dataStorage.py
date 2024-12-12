@@ -87,6 +87,7 @@ class Arguments:
         self.store_raw = arguments["store_raw"]
         self.show_intensity = arguments["show_intensity"]
         self.isometric = arguments["isometric"]
+        self.axis_abs_max = arguments["axis_abs_max"]
         self.isolines = arguments["isolines"]
         self.peaks_filename = arguments["peaks_filename"]
         self.cache_dir = arguments["cache_dir"]
@@ -111,6 +112,7 @@ class Arguments:
                     "not_animated": self.not_animated,
                     "store_raw": self.store_raw,
                     "show_intensity": self.show_intensity,
+                    "axis_abs_max": self.axis_abs_max,
                     "isometric": self.isometric,
                     "isolines": self.isolines,
                     "peaks_filename": self.peaks_filename,
