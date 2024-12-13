@@ -57,26 +57,20 @@ class IntensityBasedController(BaseController):
 
 
     def plotting_sigma(self):
-        print(np.array(self.der).shape)
-        print(np.array(self.mu_tanh).shape)
-        print(np.array(self.sigmas).shape)
+        # print(np.array(self.der).shape)
+        # print(np.array(self.mu_tanh).shape)
+        # print(np.array(self.sigmas).shape)
         result = np.array([normalize(der_vehicle, 10) for der_vehicle in self.der])
-        print(result.shape)
-        print(self.simTime.shape)
-        print(np.array(self.simTime).shape)
-        print(self.simTime.T[0].shape)
-        print(self.simTime.T[0])
-        print(result[0].shape)
-        print(result[0])
+
         for vehicle in range(self.number_of_vehicles):
             plt.figure()
+            result[vehicle][0] = 0
             plt.plot(self.simTime, result[vehicle], label='Reaction')
             plt.plot(self.simTime, self.mu_tanh[vehicle], label='Control')
             plt.hlines(0, xmin=0, xmax=np.max(self.simTime), color='gray') # 0 axis
             plt.xlabel('Time,s', fontsize=12)
             plt.ylabel('Sigma', fontsize=12)
-            plt.title("Control",
-                       fontsize=10)
+            # plt.title("Control", fontsize=10)
             plt.legend()
             plt.savefig(os.path.join(self.timestamped_folder,
                                      create_timestamped_filename_ext(f'sigmas_v{vehicle}',
@@ -87,8 +81,6 @@ class IntensityBasedController(BaseController):
 
     def plotting_quality(self):
         cumulative_quality = cumsum(self.sample_time*self.quality_array, axis=1)
-        print("quality")
-        print(cumulative_quality.shape)
 
         plt.figure()
         plt.xlabel('Time,s', fontsize=12)
@@ -125,7 +117,7 @@ class IntensityBasedController(BaseController):
 
             for i, (intensities, ax) in enumerate(zip(self.intensity, axes)):
                 ax.plot(self.simTime, intensities, label=f'Agent {i + 1}', color=f'C{i}')
-                ax.set_title(f'Agent {i + 1} Field Intensity Over Steps')
+                # ax.set_title(f'Agent {i + 1} Field Intensity Over Steps')
                 ax.set_xlabel('Time,s')
                 ax.set_ylabel('Field Intensity')
                 ax.legend()
@@ -138,7 +130,7 @@ class IntensityBasedController(BaseController):
             for i, intensities in enumerate(self.intensity):
                 plt.plot(self.simTime, intensities, label=f'Agent {i + 1}', color=f'C{i}')
 
-            plt.title('Field Intensity Over Steps for All Agents')
+            # plt.title('Field Intensity Over Steps for All Agents')
             plt.xlabel('Time,s')
             plt.ylabel('Field Intensity')
             plt.legend()

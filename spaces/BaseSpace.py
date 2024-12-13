@@ -103,7 +103,7 @@ class BaseSpace(ABC):
         ax.set_xlabel('X,m / East')
         ax.set_ylabel('Y,m / North')
         ax.set_zlabel('Intensity')
-        plt.title(f"Intensity map, based on  {self.type} peaks")
+        # plt.title(f"Intensity map, based on  {self.type} peaks")
         plt.savefig(os.path.join(folder,
                                  create_timestamped_filename_ext(self.type,
                                                                  suffix,

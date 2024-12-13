@@ -93,6 +93,7 @@ class Arguments:
         self.cache_dir = arguments["cache_dir"]
         self.peak_type = arguments["peak_type"]
         self.shift_vehicle = arguments["shift_vehicle"]
+        self.start_points = arguments["start_points"]
         self.shift_xyz = arguments["shift_xyz"]
         self.target_isoline=arguments["target_isoline"]
         self.N = arguments["N"]
@@ -119,6 +120,7 @@ class Arguments:
                     "cache_dir": self.cache_dir,
                     "peak_type": self.peak_type,
                     "shift_vehicle": self.shift_vehicle,
+                    "start_points": self.start_points,
                     "shift_xyz": self.shift_xyz,
                     "target_isoline": self.target_isoline,
                     "N": self.N,

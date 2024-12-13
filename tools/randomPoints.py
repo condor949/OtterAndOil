@@ -79,14 +79,12 @@ def green_to_yellow(steps):
     return colors
 
 def normalize(arr, lim):
-    print(arr)
     result = np.copy(arr)
     min = np.min(result)
     max = np.max(result)
     for i, val in enumerate(result):
         # Calculate the average for the row
         avg = abs((min + max) / 2)
-        # print(avg)
         # Replace values greater than the average with MAGIC_VALUE. For example 42
         if abs(val) > lim:
             result[i] = avg * np.sign(val)

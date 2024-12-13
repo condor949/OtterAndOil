@@ -86,6 +86,8 @@ if __name__ == '__main__':
     ###############################################################################
     if arguments.catamarans == 1:
         starting_points = [[0, 0]]
+    elif len(arguments.start_points) == arguments.catamarans:
+        starting_points = arguments.start_points
     else:
         starting_points = [next(point_generator(arguments.radius, arguments.catamarans)) for _ in range(arguments.catamarans)]
     vehicles = [Otter(V_current=arguments.V_current,
@@ -142,21 +144,21 @@ if __name__ == '__main__':
                                               space=space)
 
         swarmData = simultaneous_simulate(vehicles=vehicles,
-                                                     N=arguments.N,
-                                                     sample_time=arguments.sample_time,
-                                                     controller=controller)
+                                          N=arguments.N,
+                                          sample_time=arguments.sample_time,
+                                          controller=controller)
         controller.plotting_intensity()
         controller.plotting_sigma()
         controller.plotting_quality()
         plotting_track(swarmData,
-               arguments.grid_size,
-               arguments.FPS,
-               timestamped_folder,
-               timestamped_suffix,
-               space,
-               arguments.isolines,
-               arguments.big_picture,
-               arguments.not_animated)
+                       arguments.grid_size,
+                       arguments.FPS,
+                       timestamped_folder,
+                       timestamped_suffix,
+                       space,
+                       arguments.isolines,
+                       arguments.big_picture,
+                       arguments.not_animated)
 
         plotControls(controller.simTime, swarmData, vehicles, timestamped_folder, timestamped_suffix)
         plotVehicleStates(controller.simTime, swarmData, timestamped_folder, timestamped_suffix)

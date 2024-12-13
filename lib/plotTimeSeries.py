@@ -73,18 +73,18 @@ def plotVehicleStates(simTime, swarmData, folder, suffix):
         plt.figure(
             figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])), dpi=dpiValue
         )
-        plt.grid()
+        # plt.grid()
 
         plt.subplot(3, 3, 1)
         plt.plot(y, x)
-        plt.legend(["North-East positions (m)"], fontsize=legendSize1)
+        plt.legend(["North-East positions,m"], fontsize=legendSize1)
         plt.grid()
 
         plt.subplot(3, 3, 2)
-        print(z.shape)
+        # print(z.shape)
         z[0] = 0
         plt.plot(t, z)
-        plt.legend(["Depth (m)"], fontsize=legendSize1)
+        plt.legend(["Depth,m"], fontsize=legendSize1)
         plt.grid()
 
         plt.title("Vehicle states", fontsize=12)
@@ -93,48 +93,48 @@ def plotVehicleStates(simTime, swarmData, folder, suffix):
         phi[0] = 0
         theta[0] = 0
         plt.plot(t, phi, t, theta)
-        plt.legend(["Roll angle (deg)", "Pitch angle (deg)"], fontsize=legendSize1)
+        plt.legend(["Roll angle,deg", "Pitch angle,deg"], fontsize=legendSize1)
         plt.grid()
 
         plt.subplot(3, 3, 4)
         plt.plot(t, U)
-        plt.legend(["Speed (m/s)"], fontsize=legendSize1)
+        plt.legend(["Speed,m/s"], fontsize=legendSize1)
         plt.grid()
 
         plt.subplot(3, 3, 5)
         plt.plot(t, chi)
-        plt.legend(["Course angle (deg)"], fontsize=legendSize1)
+        plt.legend(["Course angle,deg"], fontsize=legendSize1)
         plt.grid()
 
         plt.subplot(3, 3, 6)
         alpha_c[0] = 0
         theta[0] = 0
         plt.plot(t, theta, t, alpha_c)
-        plt.legend(["Pitch angle (deg)", "Flight path angle (deg)"], fontsize=legendSize1)
+        plt.legend(["Pitch angle,deg", "Flight path angle,deg"], fontsize=legendSize1)
         plt.grid()
 
         plt.subplot(3, 3, 7)
         plt.plot(t, u, t, v, t, w)
-        plt.xlabel("Time (s)", fontsize=12)
+        plt.xlabel("Time,s", fontsize=12)
         plt.legend(
-            ["Surge velocity (m/s)", "Sway velocity (m/s)", "Heave velocity (m/s)"],
+            ["Surge velocity,m/s", "Sway velocity,m/s", "Heave velocity,m/s"],
             fontsize=legendSize1,
         )
         plt.grid()
 
         plt.subplot(3, 3, 8)
         plt.plot(t, p, t, q, t, r)
-        plt.xlabel("Time (s)", fontsize=12)
+        plt.xlabel("Time,s", fontsize=12)
         plt.legend(
-            ["Roll rate (deg/s)", "Pitch rate (deg/s)", "Yaw rate (deg/s)"],
+            ["Roll rate,deg/s", "Pitch rate,deg/s", "Yaw rate,deg/s"],
             fontsize=legendSize1,
         )
         plt.grid()
 
         plt.subplot(3, 3, 9)
         plt.plot(t, psi, t, beta_c)
-        plt.xlabel("Time (s)", fontsize=12)
-        plt.legend(["Yaw angle (deg)", "Crab angle (deg)"], fontsize=legendSize1)
+        plt.xlabel("Time,s", fontsize=12)
+        plt.legend(["Yaw angle,deg", "Crab angle,deg"], fontsize=legendSize1)
         plt.grid()
         plt.savefig(os.path.join(folder,
                                  create_timestamped_filename_ext(f"states_v{i}",
@@ -255,7 +255,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
 
     color_gen = color_generator()
     plotData = {}
-
+    i = 0
     for simData in swarmData:
         # State vectors
         x = simData[:, 0]
@@ -271,9 +271,9 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
         color = next(color_gen)
         plt.plot(dataSet[0][0], dataSet[1][0], marker='*', markersize=6, color=color, label='Start Point', zorder=10)
         # Line/trajectory plot
-        line = plt.plot(dataSet[0], dataSet[1], lw=2, c=color, zorder=10)[0]
+        line = plt.plot(dataSet[0], dataSet[1], lw=2, c=color, zorder=10, label=f'agent {i+1}')[0]
         plotData[line] = dataSet
-
+        i+=1
     # Setting the axes properties
     # ax.set_xlabel('X,m / East')
     # ax.set_ylabel('Y,m / North')
