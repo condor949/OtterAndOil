@@ -1,9 +1,11 @@
-from numpy.ma.core import cumsum, array
+from numpy.ma.core import cumsum
+
 from spaces import BaseSpace
 from .BaseController import BaseController
 import numpy as np
 import matplotlib.pyplot as plt
 from tools.dataStorage import *
+from tools.randomPoints import normalize
 
 
 class IntensityBasedController(BaseController):
@@ -55,23 +57,23 @@ class IntensityBasedController(BaseController):
 
 
     def plotting_sigma(self):
-        # print(array(self.der).shape)
-        # print(array(self.mu_tanh).shape)
-        # print(array(self.sigmas).shape)
-
-        result = np.copy(self.der)
-        for i, row in enumerate(result):
-            # Calculate the average for the row
-            avg = (np.min(row)+np.max(row))/2
-            print(avg)
-            # Replace values greater than the average with MAGIC_VALUE. For example 42
-            result[i] = [6 if val > avg else val for val in row]
-
+        print(np.array(self.der).shape)
+        print(np.array(self.mu_tanh).shape)
+        print(np.array(self.sigmas).shape)
+        result = np.array([normalize(der_vehicle, 10) for der_vehicle in self.der])
+        print(result.shape)
+        print(self.simTime.shape)
+        print(np.array(self.simTime).shape)
+        print(self.simTime.T[0].shape)
+        print(self.simTime.T[0])
+        print(result[0].shape)
+        print(result[0])
         for vehicle in range(self.number_of_vehicles):
             plt.figure()
-            plt.plot(result[vehicle], label='Reaction')
-            plt.plot(self.mu_tanh[vehicle], label='Control')
-            plt.xlabel('Steps', fontsize=12)
+            plt.plot(self.simTime, result[vehicle], label='Reaction')
+            plt.plot(self.simTime, self.mu_tanh[vehicle], label='Control')
+            plt.hlines(0, xmin=0, xmax=np.max(self.simTime), color='gray') # 0 axis
+            plt.xlabel('Time,s', fontsize=12)
             plt.ylabel('Sigma', fontsize=12)
             plt.title("Control",
                        fontsize=10)
@@ -85,15 +87,16 @@ class IntensityBasedController(BaseController):
 
     def plotting_quality(self):
         cumulative_quality = cumsum(self.sample_time*self.quality_array, axis=1)
-        #print(cumulative_quality.shape)
+        print("quality")
+        print(cumulative_quality.shape)
 
         plt.figure()
-        plt.xlabel('Steps', fontsize=12)
+        plt.xlabel('Time,s', fontsize=12)
         plt.ylabel('Total integral', fontsize=12)
         plt.title('The total value of the shortest distance at each point of the trajectory',
                   fontsize=10)
         for i in range(self.number_of_vehicles):
-            plt.plot(cumulative_quality[i], label=f'agent {i+1}')
+            plt.plot(self.simTime, cumulative_quality[i], label=f'agent {i+1}')
         plt.legend()
         plt.savefig(os.path.join(self.timestamped_folder,
                                  create_timestamped_filename_ext('quality',
@@ -112,7 +115,7 @@ class IntensityBasedController(BaseController):
                                    If False, plots all agents on a single plot.
         """
         num_agents = len(self.intensity)
-        steps = range(len(self.intensity[0]))  # Assume all agents have the same number of steps
+        #steps = range(len(self.intensity[0]))  # Assume all agents have the same number of steps
 
         if separate_plots:
             # Create a grid of subplots for each agent
@@ -121,9 +124,9 @@ class IntensityBasedController(BaseController):
                 axes = [axes]  # Make it iterable if there is only one subplot
 
             for i, (intensities, ax) in enumerate(zip(self.intensity, axes)):
-                ax.plot(steps, intensities, label=f'Agent {i + 1}', color=f'C{i}')
+                ax.plot(self.simTime, intensities, label=f'Agent {i + 1}', color=f'C{i}')
                 ax.set_title(f'Agent {i + 1} Field Intensity Over Steps')
-                ax.set_xlabel('Steps')
+                ax.set_xlabel('Time,s')
                 ax.set_ylabel('Field Intensity')
                 ax.legend()
 
@@ -133,10 +136,10 @@ class IntensityBasedController(BaseController):
             # Plot all agents on a single graph
             plt.figure(figsize=(10, 6))
             for i, intensities in enumerate(self.intensity):
-                plt.plot(steps, intensities, label=f'Agent {i + 1}', color=f'C{i}')
+                plt.plot(self.simTime, intensities, label=f'Agent {i + 1}', color=f'C{i}')
 
             plt.title('Field Intensity Over Steps for All Agents')
-            plt.xlabel('Steps')
+            plt.xlabel('Time,s')
             plt.ylabel('Field Intensity')
             plt.legend()
         plt.savefig(os.path.join(self.timestamped_folder,

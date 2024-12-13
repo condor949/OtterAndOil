@@ -8,3 +8,6 @@ class BaseController(ABC):
 
     def generate_control(self, vehicles, positions, step) -> Sequence:
         pass
+
+    def set_sim_time(self, simTime):
+        self.simTime = simTime

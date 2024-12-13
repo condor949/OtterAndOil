@@ -2,7 +2,6 @@
 # Function printVehicleinfo(vehicle)
 ###############################################################################
 def printVehicleinfo(vehicle, sampleTime, N):
-    print(vehicle)
     print('---------------------------------------------------------------------------------------')
     print('%s' % (vehicle.name))
     print('Length: %s m' % (vehicle.L))

@@ -18,12 +18,13 @@ from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
 from matplotlib import rc
-from tools.randomPoints import color_generator, green_to_yellow
+from tools.randomPoints import color_generator, normalize
 from tools.dataStorage import *
 from functools import partial
 from spaces import BaseSpace
 
 legendSize = 16
+legendSize1 = 10
 figSize1 = [25, 25]  # figure1 size in cm
 bigFigSize1 = [50, 26]  # larger figure1 size in cm
 figSize2 = [25, 13]  # figure2 size in cm
@@ -40,128 +41,146 @@ def cm2inch(value):  # inch to cm
 
 # plotVehicleStates(simTime, simData, figNo) plots the 6-DOF vehicle
 # position/attitude and velocities versus time in figure no. figNo
-def plotVehicleStates(simTime, simData, figNo):
+def plotVehicleStates(simTime, swarmData, folder, suffix):
     # Time vector
     t = simTime
 
-    # State vectors
-    x = simData[:, 0]
-    y = simData[:, 1]
-    z = simData[:, 2]
-    phi = R2D(ssa(simData[:, 3]))
-    theta = R2D(ssa(simData[:, 4]))
-    psi = R2D(ssa(simData[:, 5]))
-    u = simData[:, 6]
-    v = simData[:, 7]
-    w = simData[:, 8]
-    p = R2D(simData[:, 9])
-    q = R2D(simData[:, 10])
-    r = R2D(simData[:, 11])
+    rc('font', size=9)
+    i = 0
+    for simData in swarmData:
+        # State vectors
+        x = simData[:, 0]
+        y = simData[:, 1]
+        z = simData[:, 2]
+        phi = R2D(ssa(simData[:, 3]))
+        theta = R2D(ssa(simData[:, 4]))
+        psi = R2D(ssa(simData[:, 5]))
+        u = simData[:, 6]
+        v = simData[:, 7]
+        w = simData[:, 8]
+        p = R2D(simData[:, 9])
+        q = R2D(simData[:, 10])
+        r = R2D(simData[:, 11])
 
-    # Speed
-    U = np.sqrt(np.multiply(u, u) + np.multiply(v, v) + np.multiply(w, w))
+        # Speed
+        U = np.sqrt(np.multiply(u, u) + np.multiply(v, v) + np.multiply(w, w))
 
-    beta_c = R2D(ssa(np.arctan2(v, u)))  # crab angle, beta_c
-    alpha_c = R2D(ssa(np.arctan2(w, u)))  # flight path angle
-    chi = R2D(ssa(simData[:, 5] + np.arctan2(v, u)))  # course angle, chi=psi+beta_c
+        beta_c = R2D(ssa(np.arctan2(v, u)))  # crab angle, beta_c
+        alpha_c = R2D(ssa(np.arctan2(w, u)))  # flight path angle
+        chi = R2D(ssa(simData[:, 5] + np.arctan2(v, u)))  # course angle, chi=psi+beta_c
 
-    # Plots
-    plt.figure(
-        figNo, figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])), dpi=dpiValue
-    )
-    plt.grid()
+        # Plots
+        plt.figure(
+            figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])), dpi=dpiValue
+        )
+        plt.grid()
 
-    plt.subplot(3, 3, 1)
-    plt.plot(y, x)
-    plt.legend(["North-East positions (m)"], fontsize=legendSize)
-    plt.grid()
+        plt.subplot(3, 3, 1)
+        plt.plot(y, x)
+        plt.legend(["North-East positions (m)"], fontsize=legendSize1)
+        plt.grid()
 
-    plt.subplot(3, 3, 2)
-    plt.plot(t, z)
-    plt.legend(["Depth (m)"], fontsize=legendSize)
-    plt.grid()
+        plt.subplot(3, 3, 2)
+        print(z.shape)
+        z[0] = 0
+        plt.plot(t, z)
+        plt.legend(["Depth (m)"], fontsize=legendSize1)
+        plt.grid()
 
-    plt.title("Vehicle states", fontsize=12)
+        plt.title("Vehicle states", fontsize=12)
 
-    plt.subplot(3, 3, 3)
-    plt.plot(t, phi, t, theta)
-    plt.legend(["Roll angle (deg)", "Pitch angle (deg)"], fontsize=legendSize)
-    plt.grid()
+        plt.subplot(3, 3, 3)
+        phi[0] = 0
+        theta[0] = 0
+        plt.plot(t, phi, t, theta)
+        plt.legend(["Roll angle (deg)", "Pitch angle (deg)"], fontsize=legendSize1)
+        plt.grid()
 
-    plt.subplot(3, 3, 4)
-    plt.plot(t, U)
-    plt.legend(["Speed (m/s)"], fontsize=legendSize)
-    plt.grid()
+        plt.subplot(3, 3, 4)
+        plt.plot(t, U)
+        plt.legend(["Speed (m/s)"], fontsize=legendSize1)
+        plt.grid()
 
-    plt.subplot(3, 3, 5)
-    plt.plot(t, chi)
-    plt.legend(["Course angle (deg)"], fontsize=legendSize)
-    plt.grid()
+        plt.subplot(3, 3, 5)
+        plt.plot(t, chi)
+        plt.legend(["Course angle (deg)"], fontsize=legendSize1)
+        plt.grid()
 
-    plt.subplot(3, 3, 6)
-    plt.plot(t, theta, t, alpha_c)
-    plt.legend(["Pitch angle (deg)", "Flight path angle (deg)"], fontsize=legendSize)
-    plt.grid()
+        plt.subplot(3, 3, 6)
+        alpha_c[0] = 0
+        theta[0] = 0
+        plt.plot(t, theta, t, alpha_c)
+        plt.legend(["Pitch angle (deg)", "Flight path angle (deg)"], fontsize=legendSize1)
+        plt.grid()
 
-    plt.subplot(3, 3, 7)
-    plt.plot(t, u, t, v, t, w)
-    plt.xlabel("Time (s)", fontsize=12)
-    plt.legend(
-        ["Surge velocity (m/s)", "Sway velocity (m/s)", "Heave velocity (m/s)"],
-        fontsize=legendSize,
-    )
-    plt.grid()
+        plt.subplot(3, 3, 7)
+        plt.plot(t, u, t, v, t, w)
+        plt.xlabel("Time (s)", fontsize=12)
+        plt.legend(
+            ["Surge velocity (m/s)", "Sway velocity (m/s)", "Heave velocity (m/s)"],
+            fontsize=legendSize1,
+        )
+        plt.grid()
 
-    plt.subplot(3, 3, 8)
-    plt.plot(t, p, t, q, t, r)
-    plt.xlabel("Time (s)", fontsize=12)
-    plt.legend(
-        ["Roll rate (deg/s)", "Pitch rate (deg/s)", "Yaw rate (deg/s)"],
-        fontsize=legendSize,
-    )
-    plt.grid()
+        plt.subplot(3, 3, 8)
+        plt.plot(t, p, t, q, t, r)
+        plt.xlabel("Time (s)", fontsize=12)
+        plt.legend(
+            ["Roll rate (deg/s)", "Pitch rate (deg/s)", "Yaw rate (deg/s)"],
+            fontsize=legendSize1,
+        )
+        plt.grid()
 
-    plt.subplot(3, 3, 9)
-    plt.plot(t, psi, t, beta_c)
-    plt.xlabel("Time (s)", fontsize=12)
-    plt.legend(["Yaw angle (deg)", "Crab angle (deg)"], fontsize=legendSize)
-    plt.grid()
-
+        plt.subplot(3, 3, 9)
+        plt.plot(t, psi, t, beta_c)
+        plt.xlabel("Time (s)", fontsize=12)
+        plt.legend(["Yaw angle (deg)", "Crab angle (deg)"], fontsize=legendSize1)
+        plt.grid()
+        plt.savefig(os.path.join(folder,
+                                 create_timestamped_filename_ext(f"states_v{i}",
+                                                                 suffix,
+                                                                 "png")))
+        i+=1
+        plt.close()
 
 # plotControls(simTime, simData) plots the vehicle control inputs versus time
 # in figure no. figNo
-def plotControls(simTime, simData, vehicle, figNo):
+def plotControls(simTime, swarmData, vehicles, folder, suffix):
     DOF = 6
 
     # Time vector
+    rc('font', size=10)
     t = simTime
+    for vehicle in vehicles:
+        plt.figure(figsize=(cm2inch(figSize2[0]), cm2inch(figSize2[1])), dpi=dpiValue)
 
-    plt.figure(
-        figNo, figsize=(cm2inch(figSize2[0]), cm2inch(figSize2[1])), dpi=dpiValue
-    )
+        # Columns and rows needed to plot vehicle.dimU control inputs
+        col = 2
+        row = int(math.ceil(vehicle.dimU / col))
 
-    # Columns and rows needed to plot vehicle.dimU control inputs
-    col = 2
-    row = int(math.ceil(vehicle.dimU / col))
+        # Plot the vehicle.dimU active control inputs
+        for i in range(0, vehicle.dimU):
 
-    # Plot the vehicle.dimU active control inputs
-    for i in range(0, vehicle.dimU):
+            u_control = swarmData[vehicle.serial_number][:, 2 * DOF + i]  # control input, commands
+            u_actual = swarmData[vehicle.serial_number][:, 2 * DOF + vehicle.dimU + i]  # actual control input
 
-        u_control = simData[:, 2 * DOF + i]  # control input, commands
-        u_actual = simData[:, 2 * DOF + vehicle.dimU + i]  # actual control input
+            if vehicle.controls[i].find("deg") != -1:  # convert angles to deg
+                u_control = R2D(u_control)
+                u_actual = R2D(u_actual)
 
-        if vehicle.controls[i].find("deg") != -1:  # convert angles to deg
-            u_control = R2D(u_control)
-            u_actual = R2D(u_actual)
-
-        plt.subplot(row, col, i + 1)
-        plt.plot(t, u_control, t, u_actual)
-        plt.legend(
-            [vehicle.controls[i] + ", command", vehicle.controls[i] + ", actual"],
-            fontsize=legendSize,
-        )
-        plt.xlabel("Time (s)", fontsize=12)
-        plt.grid()
+            plt.subplot(row, col, i + 1)
+            plt.plot(t, u_control, t, u_actual)
+            plt.legend(
+                [vehicle.controls[i] + ", command", vehicle.controls[i] + ", actual"],
+                fontsize=10,
+            )
+            plt.xlabel("Time,s", fontsize=12)
+            plt.grid()
+            plt.savefig(os.path.join(folder,
+                                  create_timestamped_filename_ext(f"control_v{vehicle.serial_number}",
+                                                                  suffix,
+                                                                  "png")))
+        plt.close()
 
 
 # plot3D(simData,numDataPoints,FPS,filename,figNo) plots the vehicles position (x, y, z) in 3D
@@ -236,6 +255,7 @@ def plotting_track(swarmData, numDataPoints, FPS, folder, suffix, space: BaseSpa
 
     color_gen = color_generator()
     plotData = {}
+
     for simData in swarmData:
         # State vectors
         x = simData[:, 0]

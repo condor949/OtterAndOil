@@ -94,7 +94,10 @@ if __name__ == '__main__':
                       shift=arguments.shift_vehicle,
                       color=next(color_generator()),
                       starting_point=starting_points[i]) for i in range(arguments.catamarans)]
-    printVehicleinfo(vehicles[0], arguments.sample_time, arguments.N)
+    print(vehicles[0])
+    for vehicle in vehicles:
+        printVehicleinfo(vehicle, arguments.sample_time, arguments.N)
+
 
     """ Uncomment the line below for 3D animation in the web browser. 
     Alternatively, open the animated GIF file manually in your preferred browser. """
@@ -138,7 +141,7 @@ if __name__ == '__main__':
                                               sample_time=arguments.sample_time,
                                               space=space)
 
-        [simTime, swarmData] = simultaneous_simulate(vehicles=vehicles,
+        swarmData = simultaneous_simulate(vehicles=vehicles,
                                                      N=arguments.N,
                                                      sample_time=arguments.sample_time,
                                                      controller=controller)
@@ -155,6 +158,8 @@ if __name__ == '__main__':
                arguments.big_picture,
                arguments.not_animated)
 
+        plotControls(controller.simTime, swarmData, vehicles, timestamped_folder, timestamped_suffix)
+        plotVehicleStates(controller.simTime, swarmData, timestamped_folder, timestamped_suffix)
         arguments.store_in_config(timestamped_folder, timestamped_suffix)
         space.store_in_config(timestamped_folder, timestamped_suffix)
 

@@ -54,6 +54,6 @@ def simultaneous_simulate(vehicles: Sequence, N: int, sample_time: float, contro
             m_u_actual[vehicle.serial_number] = u_actual
 
     # Store simulation time vector
-    sim_time = np.arange(start=0, stop=t + sample_time, step=sample_time)[:, None]
+    controller.set_sim_time(np.arange(start=0, stop=t + sample_time, step=sample_time)[:, None])
 
-    return sim_time, sim_data
+    return sim_data
