@@ -90,8 +90,13 @@ if __name__ == '__main__':
         starting_points = arguments.start_points
     else:
         starting_points = [next(point_generator(arguments.radius, arguments.catamarans)) for _ in range(arguments.catamarans)]
-    vehicles = [Otter(V_current=arguments.V_current,
-                      beta_current=arguments.beta_current,
+    # vehicles = [Otter(V_current=arguments.V_current,
+    #                   beta_current=arguments.beta_current,
+    #                   serial_number=i,
+    #                   shift=arguments.shift_vehicle,
+    #                   color=next(color_generator()),
+    #                   starting_point=starting_points[i]) for i in range(arguments.catamarans)]
+    vehicles = [Dubins(V_current=arguments.V_current,
                       serial_number=i,
                       shift=arguments.shift_vehicle,
                       color=next(color_generator()),
@@ -160,8 +165,8 @@ if __name__ == '__main__':
                        arguments.big_picture,
                        arguments.not_animated)
 
-        plotControls(controller.simTime, swarmData, vehicles, timestamped_folder, timestamped_suffix)
-        plotVehicleStates(controller.simTime, swarmData, timestamped_folder, timestamped_suffix)
+        #plotControls(controller.simTime, swarmData, vehicles, timestamped_folder, timestamped_suffix)
+        #plotVehicleStates(controller.simTime, swarmData, timestamped_folder, timestamped_suffix)
         arguments.store_in_config(timestamped_folder, timestamped_suffix)
         space.store_in_config(timestamped_folder, timestamped_suffix)
 

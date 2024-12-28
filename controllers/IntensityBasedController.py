@@ -39,6 +39,7 @@ class IntensityBasedController(BaseController):
         controls = []
         for vehicle in range(self.number_of_vehicles):
             f_current = m_f_current[vehicle]
+            print(f_current)
             f_prev = self.m_f_prev[vehicle]
             sigma = self.berman_law(vehicle, step, f_current, f_prev)
 
@@ -49,7 +50,7 @@ class IntensityBasedController(BaseController):
             else:
                 u_control = [0, 0]
             controls.append(u_control)
-
+            #print(u_control)
             self.intensity[vehicle, step] = f_current
             self.quality_array[vehicle, step] = self.space.get_nearest_contour_point_norm(positions[vehicle][0], positions[vehicle][1])
         self.m_f_prev = m_f_current

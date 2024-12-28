@@ -41,6 +41,8 @@ Author:     Thor I. Fossen
 """
 import numpy as np
 import math
+
+from lib import attitudeEuler
 from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 from tools.randomPoints import *
 
@@ -371,3 +373,6 @@ class Otter:
         n2 = np.sign(u_alloc[1]) * math.sqrt(abs(u_alloc[1]))
 
         return n1, n2
+
+    def repositioning(self, eta, nu, sample_time):
+        return attitudeEuler(eta, nu, sample_time)

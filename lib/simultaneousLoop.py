@@ -1,3 +1,4 @@
+
 import numpy as np
 from collections.abc import Sequence
 from vehicles import *
@@ -40,14 +41,13 @@ def simultaneous_simulate(vehicles: Sequence, N: int, sample_time: float, contro
             u_control = m_u_control[vehicle.serial_number]
 
             t = i * sample_time  # simulation time
-
             # Store simulation data in simData
             signals = np.hstack((eta, nu, u_control, u_actual))
             sim_data[vehicle.serial_number][i, :] = signals
 
-            # Propagate vehicle and attitude dynamics
+            # Propagate vehicle attitude and  dynamics
             [nu, u_actual] = vehicle.dynamics(eta, nu, u_actual, u_control, sample_time)
-            eta = attitudeEuler(eta, nu, sample_time)
+            eta = vehicle.repositioning(eta, nu, sample_time)
 
             m_eta[vehicle.serial_number] = eta
             m_nu[vehicle.serial_number] = nu

@@ -2,3 +2,4 @@
 # -*- coding: utf-8 -*-
 
 from .otter import *
+from .dubins import *
