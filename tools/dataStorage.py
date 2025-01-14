@@ -127,7 +127,7 @@ class Arguments:
                     "start_points": self.start_points,
                     "shift_xyz": self.shift_xyz,
                     "target_isoline": self.target_isoline,
-                    "N": self.N,
+                    "sim_time_sec": self.sim_time_sec,
                     "sample_time": self.sample_time,
                     "cycles": self.cycles,
                     "radius": self.radius,

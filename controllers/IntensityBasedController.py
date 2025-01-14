@@ -1,30 +1,24 @@
-from numpy.ma.core import cumsum
-
-from spaces import BaseSpace
-from .BaseController import BaseController
 import numpy as np
 import matplotlib.pyplot as plt
+
+from spaces import BaseSpace
 from tools.dataStorage import *
+from numpy.ma.core import cumsum
 from tools.randomPoints import normalize
+from .BaseController import BaseController
 
 
 class IntensityBasedController(BaseController):
-    def __init__(self, timestamped_folder, timestamped_suffix, vehicles, N, sample_time, space: BaseSpace, f0=0, mu=0.5):
-        super().__init__()
-        self.timestamped_folder = timestamped_folder
-        self.timestamped_suffix = timestamped_suffix
+    def __init__(self, timestamped_folder: str, timestamped_suffix: str, vehicles, sim_time: int, sample_time: float, space: BaseSpace, f0=0, mu=0.5):
+        super().__init__(timestamped_folder, timestamped_suffix, vehicles, sim_time, sample_time, space)
         self.m_f_prev = [space.get_intensity(vehicle.starting_point[1], vehicle.starting_point[0]) for vehicle in vehicles]
-        self.sample_time = sample_time
         self.f0 = f0
         self.mu = mu
-        self.space = space
-        self.number_of_vehicles = len(vehicles)
-        self.colors = {vehicle.serial_number: vehicle.color for vehicle in vehicles}
-        self.intensity = np.zeros((self.number_of_vehicles, N), dtype=float)
-        self.der = np.zeros((self.number_of_vehicles, N), dtype=float)
-        self.mu_tanh = np.zeros((self.number_of_vehicles, N), dtype=float)
-        self.sigmas = np.zeros((self.number_of_vehicles, N), dtype=float)
-        self.quality_array = np.zeros((self.number_of_vehicles, N), dtype=float)
+        self.intensity = np.zeros((self.number_of_vehicles, self.N), dtype=float)
+        self.der = np.zeros((self.number_of_vehicles, self.N), dtype=float)
+        self.mu_tanh = np.zeros((self.number_of_vehicles, self.N), dtype=float)
+        self.sigmas = np.zeros((self.number_of_vehicles, self.N), dtype=float)
+        self.quality_array = np.zeros((self.number_of_vehicles, self.N), dtype=float)
 
 
     def berman_law(self, vehicle, step, f_current, f_prev):

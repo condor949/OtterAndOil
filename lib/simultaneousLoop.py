@@ -7,7 +7,7 @@ from tqdm import tqdm
 from controllers import BaseController
 
 
-def simultaneous_simulate(vehicles: Sequence, N: int, sample_time: float, controller: BaseController):
+def simultaneous_simulate(vehicles: Sequence, controller: BaseController):
     DOF = 6  # degrees of freedom
     t = 0  # initial simulation time
 
@@ -27,10 +27,10 @@ def simultaneous_simulate(vehicles: Sequence, N: int, sample_time: float, contro
         m_u_actual.append(vehicle.u_actual)
 
     # Initialization of table used to store the simulation data
-    sim_data = [np.empty([N+1, 2 * DOF + 2 * vehicle.dimU], float) for vehicle in vehicles]
+    sim_data = [np.empty([controller.N, 2 * DOF + 2 * vehicle.dimU], float) for vehicle in vehicles]
 
     # Simulator for-loop
-    for i in tqdm(range(0, N + 1), desc=f"Vehicle Simulation x{len(vehicles)}"):
+    for i in tqdm(range(0, controller.N), desc=f"Vehicle Simulation x{len(vehicles)}"):
 
         m_u_control = controller.generate_control(vehicles, m_eta, i)
 
@@ -40,20 +40,20 @@ def simultaneous_simulate(vehicles: Sequence, N: int, sample_time: float, contro
             u_actual = m_u_actual[vehicle.serial_number]
             u_control = m_u_control[vehicle.serial_number]
 
-            t = i * sample_time  # simulation time
+            # t = i * sample_time  # simulation time
             # Store simulation data in simData
             signals = np.hstack((eta, nu, u_control, u_actual))
             sim_data[vehicle.serial_number][i, :] = signals
 
             # Propagate vehicle attitude and  dynamics
-            [nu, u_actual] = vehicle.dynamics(eta, nu, u_actual, u_control, sample_time)
-            eta = vehicle.repositioning(eta, nu, sample_time)
+            [nu, u_actual] = vehicle.dynamics(eta, nu, u_actual, u_control, controller.sample_time)
+            eta = vehicle.repositioning(eta, nu, controller.sample_time)
 
             m_eta[vehicle.serial_number] = eta
             m_nu[vehicle.serial_number] = nu
             m_u_actual[vehicle.serial_number] = u_actual
 
     # Store simulation time vector
-    controller.set_sim_time(np.arange(start=0, stop=t + sample_time, step=sample_time)[:, None])
+    # controller.set_sim_time(np.arange(start=0, stop=t + sample_time, step=sample_time)[:, None])
 
     return sim_data
