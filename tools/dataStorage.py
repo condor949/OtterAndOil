@@ -81,30 +81,33 @@ def clean_data():
 class Arguments:
     def __init__(self, **arguments):
         #print(arguments)
-        self.clean_cache = arguments["clean_cache"]
-        self.big_picture = arguments["big_picture"]
-        self.not_animated = arguments["not_animated"]
-        self.store_raw = arguments["store_raw"]
-        self.show_intensity = arguments["show_intensity"]
-        self.isometric = arguments["isometric"]
-        self.axis_abs_max = arguments["axis_abs_max"]
-        self.isolines = arguments["isolines"]
-        self.peaks_filename = arguments["peaks_filename"]
-        self.cache_dir = arguments["cache_dir"]
-        self.peak_type = arguments["peak_type"]
-        self.shift_vehicle = arguments["shift_vehicle"]
-        self.start_points = arguments["start_points"]
-        self.shift_xyz = arguments["shift_xyz"]
-        self.target_isoline=arguments["target_isoline"]
-        self.N = arguments["N"]
-        self.sample_time = arguments["sample_time"]
-        self.cycles = arguments["cycles"]
-        self.radius = arguments["radius"]
-        self.catamarans = arguments["catamarans"]
-        self.grid_size = arguments["grid_size"]
-        self.FPS = arguments["FPS"]
-        self.V_current = arguments["V_current"]
-        self.beta_current = arguments["beta_current"]
+        for key, value in arguments.items():
+            setattr(self, key, value)
+        # self.clean_cache = arguments["clean_cache"]
+        # self.big_picture = arguments["big_picture"]
+        # self.not_animated = arguments["not_animated"]
+        # self.store_raw = arguments["store_raw"]
+        # self.show_intensity = arguments["show_intensity"]
+        # self.isometric = arguments["isometric"]
+        # self.axis_abs_max = arguments["axis_abs_max"]
+        # self.isolines = arguments["isolines"]
+        # self.peaks_filename = arguments["peaks_filename"]
+        # self.cache_dir = arguments["cache_dir"]
+        # self.peak_type = arguments["peak_type"]
+        # self.vehicle_type = arguments["vehicle_type"]
+        # self.shift_vehicle = arguments["shift_vehicle"]
+        # self.start_points = arguments["start_points"]
+        # self.shift_xyz = arguments["shift_xyz"]
+        # self.target_isoline=arguments["target_isoline"]
+        # self.N = arguments["N"]
+        # self.sample_time = arguments["sample_time"]
+        # self.cycles = arguments["cycles"]
+        # self.radius = arguments["radius"]
+        # self.catamarans = arguments["catamarans"]
+        # self.grid_size = arguments["grid_size"]
+        # self.FPS = arguments["FPS"]
+        # self.V_current = arguments["V_current"]
+        # self.beta_current = arguments["beta_current"]
 
     def get_json_data(self):
         return {
@@ -119,6 +122,7 @@ class Arguments:
                     "peaks_filename": self.peaks_filename,
                     "cache_dir": self.cache_dir,
                     "peak_type": self.peak_type,
+                    "vehicle_type": self.vehicle_type,
                     "shift_vehicle": self.shift_vehicle,
                     "start_points": self.start_points,
                     "shift_xyz": self.shift_xyz,
@@ -127,7 +131,7 @@ class Arguments:
                     "sample_time": self.sample_time,
                     "cycles": self.cycles,
                     "radius": self.radius,
-                    "catamarans": self.catamarans,
+                    "vehicles": self.vehicles,
                     "grid_size": self.grid_size,
                     "FPS": self.FPS,
                     "V_current": self.V_current,

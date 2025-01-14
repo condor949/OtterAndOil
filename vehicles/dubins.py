@@ -21,13 +21,13 @@ class Dubins:
         beta_c: current direction (deg)
         tau_X: surge force, pilot input (N)        
     """
-
+    short_name = 'dubins'
     def __init__(
             self,
             controlSystem="stepInput",
             r=0,
             V_current=0,
-            R=0.4,
+            R=0.315,
             B=1,
             serial_number=0,
             shift=None,
@@ -46,6 +46,7 @@ class Dubins:
         self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
         self.name = "Dubins Vehicle (see 'dubins.py' for more details)"
+        self.linestyle = '--'
         self.controlDescription = "sigma"
         controlSystem = "Berman Law"
         self.serial_number = serial_number
@@ -72,8 +73,8 @@ class Dubins:
         return ("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n")
 
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
-        dx = np.cos(nu[3]) * (u_control[0] + u_control[1]) / 2 * self.R
-        dy = np.sin(nu[3]) * (u_control[0] + u_control[1]) / 2 * self.R
+        dx = np.cos(eta[3]) * (u_control[0] + u_control[1]) / 2 * self.R
+        dy = np.sin(eta[3]) * (u_control[0] + u_control[1]) / 2 * self.R
         dtheta = (u_control[0] - u_control[1]) * self.R / self.B
         return np.array([dy, dx, 0, dtheta, 0, 0]), u_actual
 

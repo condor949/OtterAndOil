@@ -84,23 +84,31 @@ if __name__ == '__main__':
     ###############################################################################
     # Vehicle constructors
     ###############################################################################
-    if arguments.catamarans == 1:
+    if arguments.vehicles == 1:
         starting_points = [[0, 0]]
-    elif len(arguments.start_points) == arguments.catamarans:
+    elif len(arguments.start_points) == arguments.vehicles:
         starting_points = arguments.start_points
     else:
-        starting_points = [next(point_generator(arguments.radius, arguments.catamarans)) for _ in range(arguments.catamarans)]
-    # vehicles = [Otter(V_current=arguments.V_current,
-    #                   beta_current=arguments.beta_current,
-    #                   serial_number=i,
-    #                   shift=arguments.shift_vehicle,
-    #                   color=next(color_generator()),
-    #                   starting_point=starting_points[i]) for i in range(arguments.catamarans)]
-    vehicles = [Dubins(V_current=arguments.V_current,
-                      serial_number=i,
-                      shift=arguments.shift_vehicle,
-                      color=next(color_generator()),
-                      starting_point=starting_points[i]) for i in range(arguments.catamarans)]
+        starting_points = [next(point_generator(arguments.radius, arguments.vehicles)) for _ in range(arguments.vehicles)]
+    vehicles = []
+    ng = number_generator()
+    cg = color_generator()
+    for vehicle_name in arguments.vehicle_type:
+        for order_number in range(arguments.vehicles):
+            if vehicle_name == Dubins.short_name:
+                vehicles.append(Dubins(V_current=arguments.V_current,
+                                       serial_number=next(ng),
+                                       shift=arguments.shift_vehicle,
+                                       color=next(cg),
+                                       starting_point=starting_points[order_number]))
+            if vehicle_name == Otter.short_name:
+                vehicles.append(Otter(V_current=arguments.V_current,
+                                      beta_current=arguments.beta_current,
+                                      serial_number=next(ng),
+                                      shift=arguments.shift_vehicle,
+                                      color=next(cg),
+                                      starting_point=starting_points[order_number]))
+
     print(vehicles[0])
     for vehicle in vehicles:
         printVehicleinfo(vehicle, arguments.sample_time, arguments.N)

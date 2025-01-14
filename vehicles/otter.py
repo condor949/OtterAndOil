@@ -59,7 +59,7 @@ class Otter:
         beta_c: current direction (deg)
         tau_X: surge force, pilot input (N)        
     """
-
+    short_name = 'otter'
     def __init__(
             self,
             controlSystem="stepInput",
@@ -104,6 +104,7 @@ class Otter:
         self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
         self.name = "Otter USV (see 'otter.py' for more details)"
+        self.linestyle = '-'
         self.serial_number = serial_number
         if shift is None:
             shift = np.array([0, 0], float)

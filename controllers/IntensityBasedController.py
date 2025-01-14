@@ -19,6 +19,7 @@ class IntensityBasedController(BaseController):
         self.mu = mu
         self.space = space
         self.number_of_vehicles = len(vehicles)
+        self.colors = {vehicle.serial_number: vehicle.color for vehicle in vehicles}
         self.intensity = np.zeros((self.number_of_vehicles, N), dtype=float)
         self.der = np.zeros((self.number_of_vehicles, N), dtype=float)
         self.mu_tanh = np.zeros((self.number_of_vehicles, N), dtype=float)
@@ -39,7 +40,7 @@ class IntensityBasedController(BaseController):
         controls = []
         for vehicle in range(self.number_of_vehicles):
             f_current = m_f_current[vehicle]
-            print(f_current)
+            #print(f_current)
             f_prev = self.m_f_prev[vehicle]
             sigma = self.berman_law(vehicle, step, f_current, f_prev)
 
@@ -53,6 +54,7 @@ class IntensityBasedController(BaseController):
             #print(u_control)
             self.intensity[vehicle, step] = f_current
             self.quality_array[vehicle, step] = self.space.get_nearest_contour_point_norm(positions[vehicle][0], positions[vehicle][1])
+
         self.m_f_prev = m_f_current
         return controls
 
@@ -89,7 +91,7 @@ class IntensityBasedController(BaseController):
         plt.title('The total value of the shortest distance at each point of the trajectory',
                   fontsize=10)
         for i in range(self.number_of_vehicles):
-            plt.plot(self.simTime, cumulative_quality[i], label=f'agent {i+1}')
+            plt.plot(self.simTime, cumulative_quality[i], label=f'Agent {i+1}', color=self.colors.get(i))
         plt.legend()
         plt.savefig(os.path.join(self.timestamped_folder,
                                  create_timestamped_filename_ext('quality',
@@ -107,17 +109,16 @@ class IntensityBasedController(BaseController):
             separate_plots (bool): If True, plots each agent on a separate subplot.
                                    If False, plots all agents on a single plot.
         """
-        num_agents = len(self.intensity)
         #steps = range(len(self.intensity[0]))  # Assume all agents have the same number of steps
 
         if separate_plots:
             # Create a grid of subplots for each agent
-            fig, axes = plt.subplots(num_agents, 1, figsize=(8, 4 * num_agents), sharex=True)
-            if num_agents == 1:
+            fig, axes = plt.subplots(self.number_of_vehicles, 1, figsize=(8, 4 * self.number_of_vehicles), sharex=True)
+            if self.number_of_vehicles == 1:
                 axes = [axes]  # Make it iterable if there is only one subplot
 
             for i, (intensities, ax) in enumerate(zip(self.intensity, axes)):
-                ax.plot(self.simTime, intensities, label=f'Agent {i + 1}', color=f'C{i}')
+                ax.plot(self.simTime, intensities + self.space.target_isoline, label=f'Agent {i + 1}', color=self.colors.get(i))
                 # ax.set_title(f'Agent {i + 1} Field Intensity Over Steps')
                 ax.set_xlabel('Time,s')
                 ax.set_ylabel('Field Intensity')
@@ -129,7 +130,7 @@ class IntensityBasedController(BaseController):
             # Plot all agents on a single graph
             plt.figure(figsize=(10, 6))
             for i, intensities in enumerate(self.intensity):
-                plt.plot(self.simTime, intensities, label=f'Agent {i + 1}', color=f'C{i}')
+                plt.plot(self.simTime, intensities + self.space.target_isoline, label=f'Agent {i + 1}', color=self.colors.get(i))
 
             # plt.title('Field Intensity Over Steps for All Agents')
             plt.xlabel('Time,s')

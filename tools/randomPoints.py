@@ -70,6 +70,14 @@ def color_generator():
     while True:
         yield (random.random(), random.random(), random.random())
 
+
+def number_generator():
+    num = 0
+    while True:
+        yield num
+        num += 1
+
+
 def green_to_yellow(steps):
     colors = []
     steps += 1
