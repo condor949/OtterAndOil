@@ -4,7 +4,6 @@
 dubins.py:
 
 """
-import numpy as np
 import math
 from tools.randomPoints import *
 
@@ -70,8 +69,7 @@ class Dubins:
 
 
     def __str__(self):
-        return ("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n")
-
+        return self.short_name
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
         dx = np.cos(eta[3]) * (u_control[0] + u_control[1]) / 2 * self.R
         dy = np.sin(eta[3]) * (u_control[0] + u_control[1]) / 2 * self.R

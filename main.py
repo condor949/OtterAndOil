@@ -162,7 +162,7 @@ if __name__ == '__main__':
 
     space.set_contour_points(tol=1)
 
-    print(arguments.peak_type)
+    printSpaceinfo(space)
     for i in range(arguments.cycles):
         timestamped_suffix: str = create_timestamped_suffix()
         timestamped_folder: str = create_timestamped_folder(space.type,
@@ -176,6 +176,8 @@ if __name__ == '__main__':
                                               sim_time=arguments.sim_time_sec,
                                               sample_time=arguments.sample_time,
                                               space=space)
+        print(controller.simTime)
+        printControllerinfo(controller)
 
         swarmData = simultaneous_simulate(vehicles=vehicles,
                                           controller=controller)

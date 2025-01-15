@@ -10,8 +10,8 @@ class BaseController(ABC):
         self.timestamped_suffix = timestamped_suffix
         self.sample_time = sample_time
         self.sim_time = sim_time
-        self.N = int(sim_time / sample_time) + 1
-        self.simTime = np.arange(start=0, stop=sim_time, step=sample_time)[:, None]
+        self.N = round(sim_time / sample_time) + 1
+        self.simTime = np.arange(start=0, stop=self.sample_time*self.N, step=sample_time)#[:, None]
         self.space = space
         self.number_of_vehicles = len(vehicles)
         self.colors = {vehicle.serial_number: vehicle.color for vehicle in vehicles}

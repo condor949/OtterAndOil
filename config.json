@@ -15,7 +15,7 @@
     "shift_vehicle": [-10, 0],
     "shift_xyz": [0, 0, 0],
     "target_isoline": 10,
-    "sim_time_sec": 300,
+    "sim_time_sec": 50,
     "sample_time": 0.02,
     "cycles": 1,
     "radius": 1,

@@ -39,12 +39,11 @@ References:
 
 Author:     Thor I. Fossen
 """
-import numpy as np
 import math
 
 from lib import attitudeEuler
-from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 from tools.randomPoints import *
+from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 
 
 # Class Vehicle
@@ -239,7 +238,7 @@ class Otter:
         self.zeta_d = 1  # desired relative damping ratio
 
     def __str__(self):
-        return
+        return self.short_name
 
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
         """
