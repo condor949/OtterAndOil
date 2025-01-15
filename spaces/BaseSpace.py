@@ -38,9 +38,9 @@ class ShiftingSpace:
         return self.shift_xyz
 
     def __str__(self):
-        return (f"shift_x={self.shift_x()}\n"
-                f"shift_y={self.shift_y()}\n"
-                f"shift_z={self.shift_z()}\n")
+        return (f"\n\tshift_x={self.shift_x()}\n"
+                f"\tshift_y={self.shift_y()}\n"
+                f"\tshift_z={self.shift_z()}")
 
     def shift_x(self):
         return self.shift_xyz[0]
@@ -133,4 +133,7 @@ class BaseSpace(ABC):
         return self.Z
 
     def __str__(self):
-        return self.type
+        return (f'---space--------------------------------------------------------------------\n'
+                f'Space type: {self.type}\n'
+                f'Shifting space: {self.shift_xyz}\n'
+                f'Target isoline: {self.target_isoline}')

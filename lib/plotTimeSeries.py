@@ -18,7 +18,7 @@ from lib.gnc import ssa
 import mpl_toolkits.mplot3d.axes3d as p3
 import matplotlib.animation as animation
 from matplotlib import rc
-from tools.randomPoints import color_generator, normalize
+from tools.random_generators import color_generator, normalize
 from tools.dataStorage import *
 from functools import partial
 from spaces import BaseSpace

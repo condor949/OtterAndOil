@@ -3,6 +3,7 @@ from spaces import BaseSpace
 
 
 class Gaussian3DSpace(BaseSpace):
+    name = 'gaussian'
     def __init__(self, x_range=(-50, 50), y_range=(-50, 50), grid_size=500, shift_xyz=None, space_filename="", target_isoline=0):
         """
         Initialize the 3D Gaussian space.

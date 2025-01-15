@@ -117,13 +117,13 @@ if __name__ == '__main__':
     cg = color_generator()
     for vehicle_name in arguments.vehicle_type:
         for order_number in range(arguments.vehicles):
-            if vehicle_name == Dubins.short_name:
+            if vehicle_name == Dubins.name:
                 vehicles.append(Dubins(V_current=arguments.V_current,
                                        serial_number=next(ng),
                                        shift=arguments.shift_vehicle,
                                        color=next(cg),
                                        starting_point=starting_points[order_number]))
-            if vehicle_name == Otter.short_name:
+            if vehicle_name == Otter.name:
                 vehicles.append(Otter(V_current=arguments.V_current,
                                       beta_current=arguments.beta_current,
                                       serial_number=next(ng),
@@ -132,8 +132,7 @@ if __name__ == '__main__':
                                       starting_point=starting_points[order_number]))
 
     for vehicle in vehicles:
-        printVehicleinfo(vehicle)
-
+        print(vehicle)
 
     """ Uncomment the line below for 3D animation in the web browser. 
     Alternatively, open the animated GIF file manually in your preferred browser. """
@@ -142,14 +141,14 @@ if __name__ == '__main__':
         clean_data()
     if arguments.big_picture:
         print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
-    if arguments.peak_type == 'parabolic':
+    if arguments.peak_type == Parabolic3DSpace.name:
         space = Parabolic3DSpace(x_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
                                  y_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
                                  grid_size=arguments.grid_size,
                                  shift_xyz=arguments.shift_xyz,
                                  space_filename=arguments.peaks_filename,
                                  target_isoline=arguments.target_isoline)
-    elif arguments.peak_type == 'gaussian':
+    elif arguments.peak_type == Gaussian3DSpace.name:
         space = Gaussian3DSpace(x_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
                                 y_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
                                 grid_size=arguments.grid_size,
@@ -162,13 +161,13 @@ if __name__ == '__main__':
 
     space.set_contour_points(tol=1)
 
-    printSpaceinfo(space)
+    print(space)
     for i in range(arguments.cycles):
         timestamped_suffix: str = create_timestamped_suffix()
         timestamped_folder: str = create_timestamped_folder(space.type,
                                                             f"s{i + 1}",
                                                             timestamped_suffix=timestamped_suffix)
-        print(timestamped_folder)
+
         space.plotting_surface(timestamped_folder, timestamped_suffix)
         controller = IntensityBasedController(timestamped_folder=timestamped_folder,
                                               timestamped_suffix=timestamped_suffix,
@@ -176,8 +175,7 @@ if __name__ == '__main__':
                                               sim_time=arguments.sim_time_sec,
                                               sample_time=arguments.sample_time,
                                               space=space)
-        print(controller.simTime)
-        printControllerinfo(controller)
+        print(controller)
 
         swarmData = simultaneous_simulate(vehicles=vehicles,
                                           controller=controller)

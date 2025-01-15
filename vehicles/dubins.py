@@ -5,7 +5,7 @@ dubins.py:
 
 """
 import math
-from tools.randomPoints import *
+from tools.random_generators import *
 
 
 # Class Vehicle
@@ -20,7 +20,7 @@ class Dubins:
         beta_c: current direction (deg)
         tau_X: surge force, pilot input (N)        
     """
-    short_name = 'dubins'
+    name = 'dubins'
     def __init__(
             self,
             controlSystem="stepInput",
@@ -44,7 +44,7 @@ class Dubins:
         #self.B = 1.08  # beam (m)
         self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
-        self.name = "Dubins Vehicle (see 'dubins.py' for more details)"
+        self.type = "Dubins Vehicle (see 'dubins.py' for more details)"
         self.linestyle = '--'
         self.controlDescription = "sigma"
         controlSystem = "Berman Law"
@@ -67,9 +67,15 @@ class Dubins:
         m = 55.0  # mass (kg)
         pass
 
-
     def __str__(self):
-        return self.short_name
+        return (f'---vehicle--------------------------------------------------------------------------\n'
+                f'{self.type}\n'
+                f'Length: {self.L} m\n'
+                f'Control: {self.controlDescription}\n'
+                f'Wheel radius: {self.R} m\n'
+                f'Distance between the wheels: {self.B} m\n'
+                f'Starting point: [{self.starting_point[0]}, {self.starting_point[1]}]')
+
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
         dx = np.cos(eta[3]) * (u_control[0] + u_control[1]) / 2 * self.R
         dy = np.sin(eta[3]) * (u_control[0] + u_control[1]) / 2 * self.R

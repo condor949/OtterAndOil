@@ -42,7 +42,7 @@ Author:     Thor I. Fossen
 import math
 
 from lib import attitudeEuler
-from tools.randomPoints import *
+from tools.random_generators import *
 from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 
 
@@ -58,7 +58,7 @@ class Otter:
         beta_c: current direction (deg)
         tau_X: surge force, pilot input (N)        
     """
-    short_name = 'otter'
+    name = 'otter'
     def __init__(
             self,
             controlSystem="stepInput",
@@ -102,7 +102,7 @@ class Otter:
         self.B = 1.08  # beam (m)
         self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
-        self.name = "Otter USV (see 'otter.py' for more details)"
+        self.type = "Otter USV (see 'otter.py' for more details)"
         self.linestyle = '-'
         self.serial_number = serial_number
         if shift is None:
@@ -238,7 +238,11 @@ class Otter:
         self.zeta_d = 1  # desired relative damping ratio
 
     def __str__(self):
-        return self.short_name
+        return (f'---vehicle--------------------------------------------------------------------------\n'
+                f'{self.type}\n'
+                f'Length: {self.L} m\n'
+                f'Control: {self.controlDescription}\n'
+                f'Starting point: [{self.starting_point[0]}, {self.starting_point[1]}]')
 
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
         """

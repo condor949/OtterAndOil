@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from spaces import BaseSpace
 from tools.dataStorage import *
 from numpy.ma.core import cumsum
-from tools.randomPoints import normalize
+from tools.random_generators import normalize
 from .BaseController import BaseController
 
 
@@ -19,14 +19,22 @@ class IntensityBasedController(BaseController):
         self.mu_tanh = np.zeros((self.number_of_vehicles, self.N), dtype=float)
         self.sigmas = np.zeros((self.number_of_vehicles, self.N), dtype=float)
         self.quality_array = np.zeros((self.number_of_vehicles, self.N), dtype=float)
+        self.type = 'Individual intensity based controller'
 
+    def __str__(self):
+        return (f'---controller--------------------------------------------------------------------------\n'
+                f'{self.type}\n'
+                f'Sampling frequency: {round(1 / self.sample_time)} Hz\n'
+                f'Sampling time: {self.sample_time} seconds\n'
+                f'Simulation time: {round(self.sim_time)} seconds\n'
+                f'Numbers of vehicles: {self.number_of_vehicles}\n'
+                f'Result folder: {self.timestamped_folder}')
 
     def berman_law(self, vehicle, step, f_current, f_prev):
         self.der[vehicle, step] = (f_current - f_prev) / self.sample_time
         self.mu_tanh[vehicle, step] = self.mu * np.tanh(f_current - self.f0)
         self.sigmas[vehicle, step] = -np.sign(self.der[vehicle, step] + self.mu_tanh[vehicle, step])
         return self.sigmas[vehicle, step]
-
 
     def generate_control(self, vehicles, positions, step):
         m_f_current = [self.space.get_intensity(eta[1], eta[0]) for eta in positions]
@@ -52,7 +60,6 @@ class IntensityBasedController(BaseController):
         self.m_f_prev = m_f_current
         return controls
 
-
     def plotting_sigma(self):
         # print(np.array(self.der).shape)
         # print(np.array(self.mu_tanh).shape)
@@ -75,7 +82,6 @@ class IntensityBasedController(BaseController):
                                                                      'png')))
         plt.close()
 
-
     def plotting_quality(self):
         cumulative_quality = cumsum(self.sample_time*self.quality_array, axis=1)
 
@@ -91,8 +97,11 @@ class IntensityBasedController(BaseController):
                                  create_timestamped_filename_ext('quality',
                                                                  self.timestamped_suffix,
                                                                  'png')))
+        cumulative_quality.dump(os.path.join(self.timestamped_folder,
+                                 create_timestamped_filename_ext('quality',
+                                                                 self.timestamped_suffix,
+                                                                 'npy')))
         plt.close()
-
 
     def plotting_intensity(self, separate_plots=False):
         """
@@ -134,4 +143,8 @@ class IntensityBasedController(BaseController):
                                  create_timestamped_filename_ext('intensity',
                                                                  self.timestamped_suffix,
                                                                  'png')))
+        self.intensity.dump(os.path.join(self.timestamped_folder,
+                                 create_timestamped_filename_ext('intensity',
+                                                                 self.timestamped_suffix,
+                                                                 'npy')))
         plt.close()
