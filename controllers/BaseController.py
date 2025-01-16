@@ -13,10 +13,11 @@ class BaseController(ABC):
         self.simTime = np.arange(start=0, stop=self.sample_time*self.N, step=sample_time)#[:, None]
         self.space = space
         self.number_of_vehicles = len(vehicles)
+        self.vehicles = vehicles
         self.colors = {vehicle.serial_number: vehicle.color for vehicle in vehicles}
         self.data_storage = None
 
-    def generate_control(self, vehicles, positions, step) -> Sequence:
+    def generate_control(self, positions, step) -> Sequence:
         pass
 
     def set_data_storage(self, data_storage) -> None:

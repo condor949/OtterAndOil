@@ -8,11 +8,11 @@ from collections.abc import Sequence
 
 class Peak:
     def __init__(self, x0, y0, amplitude, sigma_x, sigma_y):
-        self.x0=x0
-        self.y0=y0
-        self.amplitude=amplitude
-        self.sigma_x=sigma_x
-        self.sigma_y=sigma_y
+        self.x0 = x0
+        self.y0 = y0
+        self.amplitude = amplitude
+        self.sigma_x = sigma_x
+        self.sigma_y = sigma_y
 
     def __repr__(self):
         return (f"Peak(x0={self.x0}, y0={self.y0}, amplitude={self.amplitude}, "
@@ -20,12 +20,13 @@ class Peak:
 
     def get_json_data(self):
         return {
-                    "x0": self.x0,
-                    "y0": self.y0,
-                    "amplitude": self.amplitude,
-                    "sigma_x": self.sigma_x,
-                    "sigma_y": self.sigma_y
-               }
+            "x0": self.x0,
+            "y0": self.y0,
+            "amplitude": self.amplitude,
+            "sigma_x": self.sigma_x,
+            "sigma_y": self.sigma_y
+        }
+
 
 class ShiftingSpace:
     def __init__(self, shift_xyz=None):
@@ -54,7 +55,9 @@ class ShiftingSpace:
 
 class BaseSpace(ABC):
     name = 'base_space'
-    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_xyz=None, space_filename="", target_isoline=0):
+
+    def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_xyz=None, space_filename="",
+                 target_isoline=0):
         """
         Initialize the 3D space.
 
@@ -64,7 +67,7 @@ class BaseSpace(ABC):
         grid_size (int): Number of points in each dimension.
         shift_xyz (int): Shift of all points of space by values from this array, respectively XYZ.
         """
-        self.x = np.linspace(*x_range, grid_size)
+        self.x = np.linspace(*x_range, int(grid_size))
         self.y = np.linspace(*y_range, grid_size)
         self.X, self.Y = np.meshgrid(self.x, self.y)
         self.Z = np.zeros_like(self.X)  # Start with a flat surface
@@ -76,8 +79,9 @@ class BaseSpace(ABC):
             with open(space_filename, 'r') as file:
                 data = json.load(file)
                 self.peaks = [Peak(**item) for item in data]
-        self.type=""
-        self.target_isoline=target_isoline
+        self.type = ""
+        self.target_isoline = target_isoline
+        self.grid_size = grid_size
         self.data_storage = None
 
     def __str__(self):
@@ -95,12 +99,12 @@ class BaseSpace(ABC):
         self.contour_points = cont
 
     def get_nearest_contour_point_norm(self, x, y):
-        return min([(xc-x)**2+(yc-y)**2 for xc, yc in self.contour_points])**0.5
+        return min([(xc - x) ** 2 + (yc - y) ** 2 for xc, yc in self.contour_points]) ** 0.5
 
     def get_intensity(self, x_current, y_current):
         pass
 
-    def plotting_surface(self, separating_plots=False, not_animated=False, isometric=False, store_plot=False):
+    def plotting_surface(self, store_plot=False, **arguments):
         """
         Plot the 3D surface with all peaks.
         """
@@ -116,7 +120,6 @@ class BaseSpace(ABC):
         else:
             plt.title(f"Intensity map, based on {self.name} peaks")
             plt.show()
-
 
     def get_json_data(self):
         json_data = list()

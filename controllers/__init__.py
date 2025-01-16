@@ -11,7 +11,7 @@ def register_class(cls):
 
 def create_instance(class_name: str, **arguments) -> BaseController:
     if class_name in controller_instance:
-        return controller_instance[class_name](arguments)
+        return controller_instance[class_name](**arguments)
     else:
         raise ValueError(f"Unknown class name: {class_name}")
 

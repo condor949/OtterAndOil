@@ -10,9 +10,8 @@ def register_class(cls):
     return cls
 
 def create_instance(class_name: str, **arguments) -> BaseSpace:
-    print(arguments)
     if class_name in space_instance:
-        return space_instance[class_name](arguments)
+        return space_instance[class_name](**arguments)
     else:
         raise ValueError(f"Unknown class name: {class_name}")
 

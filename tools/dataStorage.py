@@ -85,6 +85,9 @@ class DataStorage:
                                                             f"s{series + 1}",
                                                             timestamped_suffix=self.timestamped_suffix)
 
+    def __str__(self):
+        return (f'Result folder: {self.timestamped_folder}')
+
     def get_path(self, name, expansion) -> str:
         return os.path.join(self.timestamped_folder,
                             create_timestamped_filename_ext(name,

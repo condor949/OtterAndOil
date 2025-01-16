@@ -93,29 +93,36 @@ if __name__ == '__main__':
         data_storage = DataStorage(space.type, i)
 
         space.set_data_storage(data_storage)
-        space.plotting_surface()
+        plotting_all(space)
 
         controller = cs.create_instance(arguments.controller_type,
                                         vehicles=vehicles,
                                         sim_time=arguments.sim_time_sec,
                                         sample_time=arguments.sample_time,
-                                        space=space)
+                                        space=space,
+                                        FPS=arguments.FPS,
+                                        isolines=arguments.isolines)
         controller.set_data_storage(data_storage)
         print(controller)
+        print(data_storage)
 
-        swarmData = simultaneous_simulate(vehicles=vehicles,
-                                          controller=controller)
-        controller.plotting_intensity()
-        controller.plotting_sigma()
-        controller.plotting_quality()
-        controller.plotting_track(swarmData,
-                                    arguments.grid_size,
-                                    arguments.FPS,
-                                    arguments.isolines,
-                                    arguments.big_picture,
-                                    arguments.not_animated)
+        swarmData = simultaneous_simulate(controller=controller)
+        plotting_all(controller,
+                     separating_plots=arguments.separating_plots,
+                     not_animated=arguments.not_animated,
+                     isometric=arguments.isometric,
+                     store_plot=arguments.store_plot,
+                     big_picture=arguments.big_picture,
+                     swarmData=swarmData)
+        # controller.plotting_intensity()
+        # controller.plotting_sigma()
+        # controller.plotting_quality()
+        # controller.plotting_track(swarmData,
+        #                             arguments.big_picture,
+        #                             arguments.not_animated)
 
-        # arguments.store_in_config(timestamped_folder, timestamped_suffix)
-        # space.store_in_config(timestamped_folder, timestamped_suffix)
+        # arguments.set_data_storage(data_storage)
+        # arguments.store_in_config()
+        # space.store_in_config()
 
     print('Done!')

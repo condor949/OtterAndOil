@@ -7,7 +7,7 @@ from tqdm import tqdm
 from controllers import BaseController
 
 
-def simultaneous_simulate(vehicles: Sequence, controller: BaseController):
+def simultaneous_simulate(controller: BaseController):
     DOF = 6  # degrees of freedom
     t = 0  # initial simulation time
 
@@ -16,7 +16,7 @@ def simultaneous_simulate(vehicles: Sequence, controller: BaseController):
     m_eta = []
 
     # Initial state vectors
-    for vehicle in vehicles:
+    for vehicle in controller.vehicles:
         # position/attitude, user editable
         m_eta.append(np.array([vehicle.starting_point[1], vehicle.starting_point[0], 0, 0, 0, 0], float))
 
@@ -27,14 +27,14 @@ def simultaneous_simulate(vehicles: Sequence, controller: BaseController):
         m_u_actual.append(vehicle.u_actual)
 
     # Initialization of table used to store the simulation data
-    sim_data = [np.empty([controller.N, 2 * DOF + 2 * vehicle.dimU], float) for vehicle in vehicles]
+    sim_data = [np.empty([controller.N, 2 * DOF + 2 * vehicle.dimU], float) for vehicle in controller.vehicles]
 
     # Simulator for-loop
-    for i in tqdm(range(0, controller.N), desc=f"Vehicle Simulation x{len(vehicles)}"):
+    for i in tqdm(range(0, controller.N), desc=f"Vehicle Simulation x{controller.number_of_vehicles}"):
 
-        m_u_control = controller.generate_control(vehicles, m_eta, i)
+        m_u_control = controller.generate_control(m_eta, i)
 
-        for vehicle in vehicles:
+        for vehicle in controller.vehicles:
             eta = m_eta[vehicle.serial_number]
             nu = m_nu[vehicle.serial_number]
             u_actual = m_u_actual[vehicle.serial_number]
