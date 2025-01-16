@@ -53,6 +53,7 @@ class ShiftingSpace:
 
 
 class BaseSpace(ABC):
+    name = 'base_space'
     def __init__(self, x_range=(-30, 30), y_range=(-30, 30), grid_size=500, shift_xyz=None, space_filename="", target_isoline=0):
         """
         Initialize the 3D space.
@@ -77,6 +78,13 @@ class BaseSpace(ABC):
                 self.peaks = [Peak(**item) for item in data]
         self.type=""
         self.target_isoline=target_isoline
+        self.data_storage = None
+
+    def __str__(self):
+        return (f'---space--------------------------------------------------------------------\n'
+                f'Space type: {self.type}\n'
+                f'Shifting space: {self.shift_xyz}\n'
+                f'Target isoline: {self.target_isoline}')
 
     def set_contour_points(self, plane_z=0, tol=1e-8):
         cont = []
@@ -92,7 +100,7 @@ class BaseSpace(ABC):
     def get_intensity(self, x_current, y_current):
         pass
 
-    def plotting_surface(self, folder, suffix):
+    def plotting_surface(self, separating_plots=False, not_animated=False, isometric=False, store_plot=False):
         """
         Plot the 3D surface with all peaks.
         """
@@ -102,13 +110,13 @@ class BaseSpace(ABC):
         ax.set_xlabel('X,m / East')
         ax.set_ylabel('Y,m / North')
         ax.set_zlabel('Intensity')
-        # plt.title(f"Intensity map, based on  {self.type} peaks")
-        plt.savefig(os.path.join(folder,
-                                 create_timestamped_filename_ext(self.type,
-                                                                 suffix,
-                                                                 "png")))
-        plt.show()
-        plt.close()
+        if store_plot:
+            plt.savefig(self.data_storage.get_path(self.name, 'png'))
+            plt.close()
+        else:
+            plt.title(f"Intensity map, based on {self.name} peaks")
+            plt.show()
+
 
     def get_json_data(self):
         json_data = list()
@@ -116,11 +124,8 @@ class BaseSpace(ABC):
             json_data.append(peak.get_json_data())
         return json_data
 
-    def store_in_config(self, folder, suffix):
-        with open(os.path.join(folder,
-                               create_timestamped_filename_ext("space",
-                                                               suffix,
-                                                               "json")), 'w') as config:
+    def store_in_config(self):
+        with open(self.data_storage.get_path("space", "json"), 'w') as config:
             json.dump(self.get_json_data(), config, indent=4)
 
     def get_X(self) -> Sequence:
@@ -132,8 +137,5 @@ class BaseSpace(ABC):
     def get_Z(self) -> Sequence:
         return self.Z
 
-    def __str__(self):
-        return (f'---space--------------------------------------------------------------------\n'
-                f'Space type: {self.type}\n'
-                f'Shifting space: {self.shift_xyz}\n'
-                f'Target isoline: {self.target_isoline}')
+    def set_data_storage(self, data_storage):
+        self.data_storage = data_storage

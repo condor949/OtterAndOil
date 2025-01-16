@@ -40,14 +40,14 @@ References:
 Author:     Thor I. Fossen
 """
 import math
-
+from .vehicle import *
 from lib import attitudeEuler
 from tools.random_generators import *
 from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 
 
 # Class Vehicle
-class Otter:
+class Otter(Vehicle):
     """
     otter()                                           Propeller step inputs
     otter('headingAutopilot',psi_d,V_c,beta_c,tau_X)  Heading autopilot
@@ -71,7 +71,11 @@ class Otter:
             color='b',
             starting_point=None
     ):
-
+        super().__init__(V_current,
+                         serial_number,
+                         shift,
+                         color,
+                         starting_point)
         # Constants
         D2R = math.pi / 180  # deg2rad
         self.g = 9.81  # acceleration of gravity (m/s^2)
@@ -91,7 +95,6 @@ class Otter:
             # controlSystem = "stepInput"
 
         self.ref = r
-        self.V_c = V_current
         self.beta_c = beta_current * D2R
         self.controlMode = controlSystem
         self.tauX = tau_X  # surge force (N)
@@ -103,15 +106,6 @@ class Otter:
         self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
         self.type = "Otter USV (see 'otter.py' for more details)"
-        self.linestyle = '-'
-        self.serial_number = serial_number
-        if shift is None:
-            shift = np.array([0, 0], float)
-        if starting_point is None:
-            self.starting_point = np.array([0, 0], float) + np.array(shift, float)
-        else:
-            self.starting_point = np.array(starting_point, float)+ np.array(shift, float)
-        self.color = color
 
         self.controls = [
             "Left propeller shaft speed (rad/s)",

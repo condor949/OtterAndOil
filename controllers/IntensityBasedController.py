@@ -1,16 +1,35 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import matplotlib.animation as animation
+from math import pi
+from tqdm import tqdm
+from matplotlib import rc
 from spaces import BaseSpace
+from functools import partial
 from tools.dataStorage import *
 from numpy.ma.core import cumsum
-from tools.random_generators import normalize
 from .BaseController import BaseController
+from tools.random_generators import normalize
+from tools.random_generators import color_generator
+
+legendSize = 16
+legendSize1 = 10
+figSize1 = [25, 25]  # figure1 size in cm
+bigFigSize1 = [50, 26]  # larger figure1 size in cm
+figSize2 = [25, 13]  # figure2 size in cm
+dpiValue = 150  # figure dpi value
+
+def R2D(value):  # radians to degrees
+    return value * 180 / pi
+
+def cm2inch(value):  # inch to cm
+    return value / 2.54
 
 
 class IntensityBasedController(BaseController):
-    def __init__(self, timestamped_folder: str, timestamped_suffix: str, vehicles, sim_time: int, sample_time: float, space: BaseSpace, f0=0, mu=0.5):
-        super().__init__(timestamped_folder, timestamped_suffix, vehicles, sim_time, sample_time, space)
+    name = 'intensity'
+    def __init__(self, vehicles, sim_time: int, sample_time: float, space: BaseSpace, f0=0, mu=0.5):
+        super().__init__(vehicles, sim_time, sample_time, space)
         self.m_f_prev = [space.get_intensity(vehicle.starting_point[1], vehicle.starting_point[0]) for vehicle in vehicles]
         self.f0 = f0
         self.mu = mu
@@ -28,7 +47,7 @@ class IntensityBasedController(BaseController):
                 f'Sampling time: {self.sample_time} seconds\n'
                 f'Simulation time: {round(self.sim_time)} seconds\n'
                 f'Numbers of vehicles: {self.number_of_vehicles}\n'
-                f'Result folder: {self.timestamped_folder}')
+                f'Result folder: {self.data_storage.timestamped_folder}')
 
     def berman_law(self, vehicle, step, f_current, f_prev):
         self.der[vehicle, step] = (f_current - f_prev) / self.sample_time
@@ -76,10 +95,7 @@ class IntensityBasedController(BaseController):
             plt.ylabel('Sigma', fontsize=12)
             # plt.title("Control", fontsize=10)
             plt.legend()
-            plt.savefig(os.path.join(self.timestamped_folder,
-                                     create_timestamped_filename_ext(f'sigmas_v{vehicle}',
-                                                                     self.timestamped_suffix,
-                                                                     'png')))
+            plt.savefig(self.data_storage.get_path(f'sigmas_v{vehicle}','png'))
         plt.close()
 
     def plotting_quality(self):
@@ -93,14 +109,8 @@ class IntensityBasedController(BaseController):
         for i in range(self.number_of_vehicles):
             plt.plot(self.simTime, cumulative_quality[i], label=f'Agent {i+1}', color=self.colors.get(i))
         plt.legend()
-        plt.savefig(os.path.join(self.timestamped_folder,
-                                 create_timestamped_filename_ext('quality',
-                                                                 self.timestamped_suffix,
-                                                                 'png')))
-        cumulative_quality.dump(os.path.join(self.timestamped_folder,
-                                 create_timestamped_filename_ext('quality',
-                                                                 self.timestamped_suffix,
-                                                                 'npy')))
+        plt.savefig(self.data_storage.get_path('quality', 'png'))
+        cumulative_quality.dump(self.data_storage.get_path('quality','npy'))
         plt.close()
 
     def plotting_intensity(self, separate_plots=False):
@@ -128,7 +138,6 @@ class IntensityBasedController(BaseController):
                 ax.legend()
 
             plt.tight_layout()
-
         else:
             # Plot all agents on a single graph
             plt.figure(figsize=(10, 6))
@@ -139,12 +148,86 @@ class IntensityBasedController(BaseController):
             plt.xlabel('Time,s')
             plt.ylabel('Field Intensity')
             plt.legend()
-        plt.savefig(os.path.join(self.timestamped_folder,
-                                 create_timestamped_filename_ext('intensity',
-                                                                 self.timestamped_suffix,
-                                                                 'png')))
-        self.intensity.dump(os.path.join(self.timestamped_folder,
-                                 create_timestamped_filename_ext('intensity',
-                                                                 self.timestamped_suffix,
-                                                                 'npy')))
+        plt.savefig(self.data_storage.get_path('intensity', 'png'))
+        self.intensity.dump(self.data_storage.get_path('intensity','npy'))
+        plt.close()
+
+    def plotting_track(self, swarmData, numDataPoints, FPS,
+                       isolines: int = 0,
+                       big_picture: bool = False,
+                       not_animated: bool = False):
+        # Attaching 3D axis to the figure
+        if big_picture:
+            fig = plt.figure(figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
+                             dpi=dpiValue)
+        else:
+            fig = plt.figure(figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
+                             dpi=dpiValue)
+
+        rc('font', size=20)
+        contour = plt.contour(self.space.get_X(), self.space.get_Y(), self.space.get_Z(), levels=isolines,
+                              cmap='viridis')  # Adjust `levels` to set number of isolines
+
+        plt.clabel(contour, inline=True)  # Add labels to the isolines
+        # plt.title('Track in the intensity field')
+        plt.xlabel('X,m / East')
+        plt.ylabel('Y,m / North')
+        # plt.colorbar(contour, label='Intensity')  # Add a color bar for reference
+        plt.contour(self.space.get_X(), self.space.get_Y(), self.space.get_Z(), levels=[self.space.target_isoline],
+                    colors='red')  # Intersection line
+
+        # Animation function
+        def anim_function(num, plotData):
+            for line, dataSet in plotData.items():
+                line.set_data(dataSet[0:2, :num])
+                # line.set_3d_properties(dataSet[2, :num])
+            return plotData.keys()
+
+        color_gen = color_generator()
+        plotData = {}
+        i = 0
+        for simData in swarmData:
+            # State vectors
+            x = simData[:, 0]
+            y = simData[:, 1]
+            z = simData[:, 2]
+            # down-sampling the xyz data points
+            N = y[::len(x) // numDataPoints];
+            E = x[::len(x) // numDataPoints];
+            D = z[::len(x) // numDataPoints];
+
+            dataSet = np.array([N, E, -D])  # Down is negative z
+            # Highlight the first point with an asterisk
+            color = next(color_gen)
+            plt.plot(dataSet[0][0], dataSet[1][0], marker='*', markersize=6, color=color, label='Start Point',
+                     zorder=10)
+            # Line/trajectory plot
+            line = plt.plot(dataSet[0], dataSet[1], lw=2, c=color, zorder=10, label=f'agent {i + 1}')[0]
+            plotData[line] = dataSet
+            i += 1
+
+        plt.savefig(self.data_storage.get_path('track', "png"))
+        # plt.show()
+
+        if not not_animated:
+            # Create the animation object
+            # if isometric:
+            #     ax.view_init(elev=30.0, azim=-120.0)
+            ani = animation.FuncAnimation(fig,
+                                          partial(anim_function, plotData=plotData),
+                                          frames=numDataPoints,
+                                          interval=200,
+                                          blit=False,
+                                          repeat=True)
+            # Save the 3D animation as a gif file
+            update_func = lambda _i, _n: progress_bar.update(1)
+            with tqdm(total=getattr(ani, "_save_count"), desc="Animation Writing") as progress_bar:
+                try:
+                    writer = animation.FFMpegWriter(fps=FPS)
+                except:
+                    writer = animation.PillowWriter(fps=FPS)
+
+                ani.save(self.data_storage.get_path('track', "gif"),
+                         writer=writer,
+                         progress_callback=update_func)
         plt.close()

@@ -5,11 +5,11 @@ dubins.py:
 
 """
 import math
+from .vehicle import *
 from tools.random_generators import *
 
 
-# Class Vehicle
-class Dubins:
+class Dubins(Vehicle):
     """
     dubins()                                           Propeller step inputs
     dubins('headingAutopilot',psi_d,V_c,beta_c,tau_X)  Heading autopilot
@@ -33,39 +33,27 @@ class Dubins:
             color='b',
             starting_point=None
     ):
+        super().__init__(V_current,
+                         serial_number,
+                         shift,
+                         color,
+                         starting_point)
         # Initialize Dubins machine
         self.n_max = 10
         self.n_min = -5
-        self.V_c = V_current
         self.R = R # wheel radius
         self.B = B # the distance between the wheels
-        self.color = color
         self.L = 2.0  # Length (m)
-        #self.B = 1.08  # beam (m)
         self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
         self.type = "Dubins Vehicle (see 'dubins.py' for more details)"
-        self.linestyle = '--'
         self.controlDescription = "sigma"
-        controlSystem = "Berman Law"
-        self.serial_number = serial_number
-        if shift is None:
-            shift = np.array([0, 0], float)
-        if starting_point is None:
-            self.starting_point = np.array([0, 0], float) + np.array(shift, float)
-        else:
-            self.starting_point = np.array(starting_point, float) + np.array(shift, float)
-        self.color = color
 
         self.controls = [
             "Left propeller shaft speed (rad/s)",
             "Right propeller shaft speed (rad/s)"
         ]
         self.dimU = len(self.controls)
-
-        # Vehicle parameters
-        m = 55.0  # mass (kg)
-        pass
 
     def __str__(self):
         return (f'---vehicle--------------------------------------------------------------------------\n'

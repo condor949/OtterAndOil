@@ -4,3 +4,4 @@ argparse
 tqdm
 scipy
 pyqt5
+plotly

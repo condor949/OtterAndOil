@@ -5,9 +5,8 @@ from collections.abc import Sequence
 
 
 class BaseController(ABC):
-    def __init__(self, timestamped_folder: str, timestamped_suffix:str, vehicles, sim_time: int, sample_time: float, space: BaseSpace):
-        self.timestamped_folder = timestamped_folder
-        self.timestamped_suffix = timestamped_suffix
+    name = 'base_controller'
+    def __init__(self, vehicles, sim_time: int, sample_time: float, space: BaseSpace):
         self.sample_time = sample_time
         self.sim_time = sim_time
         self.N = round(sim_time / sample_time) + 1
@@ -15,6 +14,10 @@ class BaseController(ABC):
         self.space = space
         self.number_of_vehicles = len(vehicles)
         self.colors = {vehicle.serial_number: vehicle.color for vehicle in vehicles}
+        self.data_storage = None
 
     def generate_control(self, vehicles, positions, step) -> Sequence:
         pass
+
+    def set_data_storage(self, data_storage) -> None:
+        self.data_storage = data_storage

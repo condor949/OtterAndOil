@@ -30,7 +30,7 @@ def create_timestamped_filename_ext(base_name: str, suffix: str, extension: str)
         return f"{base_name}_{create_timestamped_suffix()}.{extension}"
 
 
-def create_timestamped_folder(*args, base_path="./data", timestamped_suffix=""):
+def create_timestamped_folder(*args, base_path="./data", timestamped_suffix="") -> str:
     """
     Creates a new folder with a name containing the current date and time.
 
@@ -59,10 +59,10 @@ def create_timestamped_folder(*args, base_path="./data", timestamped_suffix=""):
     return folder_path
 
 
-def clean_data():
+def clean_data() -> None:
     """
         Deletes the 'data' folder in the script's directory if it exists.
-        """
+    """
     # Get the path of the script's directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -78,36 +78,24 @@ def clean_data():
         print(f"'data' folder does not exist at: {data_folder_path}")
 
 
+class DataStorage:
+    def __init__(self, typename, series):
+        self.timestamped_suffix = create_timestamped_suffix()
+        self.timestamped_folder = create_timestamped_folder(typename,
+                                                            f"s{series + 1}",
+                                                            timestamped_suffix=self.timestamped_suffix)
+
+    def get_path(self, name, expansion) -> str:
+        return os.path.join(self.timestamped_folder,
+                            create_timestamped_filename_ext(name,
+                                                            self.timestamped_suffix,
+                                                            expansion))
+
 class Arguments:
     def __init__(self, **arguments):
-        #print(arguments)
         for key, value in arguments.items():
             setattr(self, key, value)
-        # self.clean_cache = arguments["clean_cache"]
-        # self.big_picture = arguments["big_picture"]
-        # self.not_animated = arguments["not_animated"]
-        # self.store_raw = arguments["store_raw"]
-        # self.show_intensity = arguments["show_intensity"]
-        # self.isometric = arguments["isometric"]
-        # self.axis_abs_max = arguments["axis_abs_max"]
-        # self.isolines = arguments["isolines"]
-        # self.peaks_filename = arguments["peaks_filename"]
-        # self.cache_dir = arguments["cache_dir"]
-        # self.peak_type = arguments["peak_type"]
-        # self.vehicle_type = arguments["vehicle_type"]
-        # self.shift_vehicle = arguments["shift_vehicle"]
-        # self.start_points = arguments["start_points"]
-        # self.shift_xyz = arguments["shift_xyz"]
-        # self.target_isoline=arguments["target_isoline"]
-        # self.N = arguments["N"]
-        # self.sample_time = arguments["sample_time"]
-        # self.cycles = arguments["cycles"]
-        # self.radius = arguments["radius"]
-        # self.catamarans = arguments["catamarans"]
-        # self.grid_size = arguments["grid_size"]
-        # self.FPS = arguments["FPS"]
-        # self.V_current = arguments["V_current"]
-        # self.beta_current = arguments["beta_current"]
+        self.data_storage = None
 
     def get_json_data(self):
         return {
@@ -122,7 +110,8 @@ class Arguments:
                     "peaks_filename": self.peaks_filename,
                     "cache_dir": self.cache_dir,
                     "peak_type": self.peak_type,
-                    "vehicle_type": self.vehicle_type,
+                    "controller_type": self.controller_type,
+                    "vehicle_types": self.vehicle_types,
                     "shift_vehicle": self.shift_vehicle,
                     "start_points": self.start_points,
                     "shift_xyz": self.shift_xyz,
@@ -139,21 +128,21 @@ class Arguments:
                 }
 
     # Save the variables to a new JSON file
-    def store_in_config(self, folder, suffix):
-        with open(os.path.join(folder,
-                               create_timestamped_filename_ext("config",
-                                                               suffix,
-                                                               "json")), 'w') as config:
+    def store_in_config(self) -> None:
+        with open(self.data_storage.get_path("config", "json"), 'w') as config:
             json.dump(self.get_json_data(), config, indent=4)
 
+    def set_data_storage(self, data_storage: DataStorage) -> None:
+        self.data_storage = data_storage
 
-def read_and_assign_arguments(input_filename):
+
+def read_and_assign_arguments(input_filename) -> Arguments:
     with open(input_filename, 'r') as file:
         data = json.load(file)
     return Arguments(**data)
 
 
-def overwrite_file(old_name, new_name):
+def overwrite_file(old_name, new_name) -> None:
     """
     Overwrite a file with a different name.
 
