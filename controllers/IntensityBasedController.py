@@ -99,7 +99,7 @@ class IntensityBasedController(BaseController):
                 plt.savefig(self.data_storage.get_path(f'sigmas_v{vehicle}','png'))
                 plt.close()
             else:
-                plt.title(f"Control {vehicle.name}", fontsize=10)
+                plt.title(f"Control v{vehicle}", fontsize=10)
                 plt.show()
 
     def plotting_quality(self, store_plot=False, **arguments):
@@ -118,7 +118,7 @@ class IntensityBasedController(BaseController):
             plt.close()
         else:
             plt.show()
-        #cumulative_quality.dump(self.data_storage.get_path('quality','npy'))
+        cumulative_quality.dump('quality.npy')
 
     def plotting_intensity(self, separate_plots=False, store_plot=False, **arguments):
         """
@@ -137,11 +137,11 @@ class IntensityBasedController(BaseController):
 
             for i, (intensities, ax) in enumerate(zip(self.intensity, axes)):
                 ax.plot(self.simTime, intensities + self.space.target_isoline, label=f'Agent {i + 1}', color=self.colors.get(i))
-                # ax.set_title(f'Agent {i + 1} Field Intensity Over Steps')
                 ax.set_xlabel('Time,s')
                 ax.set_ylabel('Field Intensity')
                 ax.legend()
-
+                if not store_plot:
+                    ax.set_title(f'Agent {i + 1} Field Intensity Over Steps')
             plt.tight_layout()
         else:
             # Plot all agents on a single graph
