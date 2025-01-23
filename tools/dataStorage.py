@@ -86,13 +86,14 @@ class DataStorage:
                                                             timestamped_suffix=self.timestamped_suffix)
 
     def __str__(self):
-        return (f'Result folder: {self.timestamped_folder}')
+        return f'Result folder: {self.timestamped_folder}'
 
     def get_path(self, name, expansion) -> str:
         return os.path.join(self.timestamped_folder,
                             create_timestamped_filename_ext(name,
                                                             self.timestamped_suffix,
                                                             expansion))
+
 
 class Arguments:
     def __init__(self, **arguments):

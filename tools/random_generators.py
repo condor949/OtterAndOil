@@ -76,24 +76,3 @@ def number_generator():
     while True:
         yield num
         num += 1
-
-
-def green_to_yellow(steps):
-    colors = []
-    steps += 1
-    for step in range(steps):
-        red_ratio = step / (steps - 1)  # Normalize to range [0, 1]
-        colors.append(to_hex([red_ratio, 1.0, 0.0]))   # RGB tuple
-    return colors
-
-def normalize(arr, lim):
-    result = np.copy(arr)
-    min = np.min(result)
-    max = np.max(result)
-    for i, val in enumerate(result):
-        # Calculate the average for the row
-        avg = abs((min + max) / 2)
-        # Replace values greater than the average with MAGIC_VALUE. For example 42
-        if abs(val) > lim:
-            result[i] = avg * np.sign(val)
-    return result
