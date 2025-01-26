@@ -67,7 +67,7 @@ class Dubins(Vehicle):
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
         dx = np.cos(eta[3]) * (u_control[0] + u_control[1]) / 2 * self.R
         dy = np.sin(eta[3]) * (u_control[0] + u_control[1]) / 2 * self.R
-        dtheta = (u_control[0] - u_control[1]) * self.R / self.B
+        dtheta = (u_control[1] - u_control[0]) * self.R / self.B
         return np.array([dy, dx, 0, dtheta, 0, 0]), u_actual
 
     def controlAllocation(self, tau_X, tau_N):

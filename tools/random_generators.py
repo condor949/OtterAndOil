@@ -76,3 +76,16 @@ def number_generator():
     while True:
         yield num
         num += 1
+
+
+def normalize(arr, lim):
+    result = np.copy(arr)
+    min = np.min(result)
+    max = np.max(result)
+    for i, val in enumerate(result):
+        # Calculate the average for the row
+        avg = abs((min + max) / 2)
+        # Replace values greater than the average with MAGIC_VALUE. For example 42
+        if abs(val) > lim:
+            result[i] = avg * np.sign(val)
+    return result
