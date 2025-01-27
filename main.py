@@ -93,7 +93,8 @@ if __name__ == '__main__':
         data_storage = DataStorage(space.type, i)
 
         space.set_data_storage(data_storage)
-        plotting_all(space)
+        plotting_all(space,
+                     store_plot=arguments.store_plot)
 
         controller = cs.create_instance(arguments.controller_type,
                                         vehicles=vehicles,

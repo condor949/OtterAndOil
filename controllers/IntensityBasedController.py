@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from math import pi
 from tqdm import tqdm
-from matplotlib import rc
+from matplotlib import rc, rcParams, rcParamsDefault
+rcParams.update(rcParamsDefault)
+rcParams["text.usetex"] = True
 from spaces import BaseSpace
 from functools import partial
 from tools.dataStorage import *
@@ -89,11 +91,11 @@ class IntensityBasedController(BaseController):
         for vehicle in range(self.number_of_vehicles):
             plt.figure()
             result[vehicle][0] = 0
-            plt.plot(self.simTime, result[vehicle], label='Reaction')
-            plt.plot(self.simTime, self.mu_tanh[vehicle], label='Control')
+            plt.plot(self.simTime, result[vehicle], label='$f`$')
+            plt.plot(self.simTime, self.mu_tanh[vehicle], label='$\\mu\\chi(f - f_\\ast)$')
             plt.hlines(0, xmin=0, xmax=np.max(self.simTime), color='gray') # 0 axis
             plt.xlabel('Time,s', fontsize=12)
-            plt.ylabel('Sigma', fontsize=12)
+            # plt.ylabel('Sigma', fontsize=12)
             plt.legend()
             if store_plot:
                 plt.savefig(self.data_storage.get_path(f'sigmas_v{vehicle}','png'))
