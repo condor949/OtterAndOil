@@ -104,7 +104,7 @@ class IntensityBasedController(BaseController):
                 plt.title(f"Control v{vehicle}", fontsize=10)
                 plt.show()
 
-    def plotting_quality(self, store_plot=False, **arguments):
+    def plotting_сumulative(self, store_plot=False, **arguments):
         cumulative_quality = cumsum(self.sample_time*self.quality_array, axis=1)
 
         plt.figure()
@@ -116,11 +116,29 @@ class IntensityBasedController(BaseController):
             plt.plot(self.simTime, cumulative_quality[i], label=f'Agent {i+1}', color=self.colors.get(i))
         plt.legend()
         if store_plot:
-            plt.savefig(self.data_storage.get_path('quality', 'png'))
+            plt.savefig(self.data_storage.get_path('cumulative', 'png'))
             plt.close()
         else:
             plt.show()
-        cumulative_quality.dump('quality.npy')
+        cumulative_quality.dump('cumulative.npy')
+
+    def plotting_short_distance(self, store_plot=False, **arguments):
+        plt.figure()
+        plt.xlabel('Time,s', fontsize=12)
+        plt.ylabel('Short distance', fontsize=12)
+        plt.title('The total value of the shortest distance at each point of the trajectory',
+                  fontsize=10)
+        print(np.array(self.simTime).shape)
+        print(np.array(self.quality_array).shape)
+        for i in range(self.number_of_vehicles):
+            plt.plot(self.simTime, self.quality_array[0], label=f'Agent {i+1}', color=self.colors.get(i))
+        plt.legend()
+        if store_plot:
+            plt.savefig(self.data_storage.get_path('short_distance', 'png'))
+            plt.close()
+        else:
+            plt.show()
+        self.quality_array.dump('short_distance.npy')
 
     def plotting_intensity(self, separate_plots=False, store_plot=False, **arguments):
         """
