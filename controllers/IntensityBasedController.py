@@ -52,13 +52,13 @@ class IntensityBasedController(BaseController):
                 f'Simulation time: {round(self.sim_time)} seconds\n'
                 f'Numbers of vehicles: {self.number_of_vehicles}')
 
-    def berman_law(self, vehicle, step, f_current, f_prev):
+    def berman_law(self, vehicle, step, f_current, f_prev, ds):
         self.der[vehicle, step] = (f_current - f_prev) / self.sample_time
         self.mu_tanh[vehicle, step] = self.mu * np.tanh(f_current - self.f0)
-        self.sigmas[vehicle, step] = -np.sign(self.der[vehicle, step] + self.mu_tanh[vehicle, step])
+        self.sigmas[vehicle, step] = -np.sign(self.der[vehicle, step] + ds * self.mu_tanh[vehicle, step])
         return self.sigmas[vehicle, step]
 
-    def generate_control(self, positions, step):
+    def generate_control(self, positions, step, relative_velocities):
         m_f_current = [self.space.get_intensity(eta[1], eta[0]) for eta in positions]
         # self.quality_array.append([self.space.get_nearest_contour_point_norm(eta[0], eta[1]) for eta in positions])
         controls = []
@@ -66,12 +66,18 @@ class IntensityBasedController(BaseController):
             f_current = m_f_current[vehicle.serial_number]
             #print(f_current)
             f_prev = self.m_f_prev[vehicle.serial_number]
-            sigma = self.berman_law(vehicle.serial_number, step, f_current, f_prev)
-
+            nu = relative_velocities[vehicle.serial_number]
+            ds = np.sqrt(nu[0] ** 2 + nu[1] ** 2)
+            sigma = self.berman_law(vehicle.serial_number, step, f_current, f_prev, ds)
+            n_forward = 100 - 80 * np.exp(-0.01 * (f_current - self.f0)**2)
+            n_rot = 30 * sigma
+            #print(f"{n_forward} {n_rot}")
+            #print(f"{n_forward - n_rot} {n_forward + n_rot}")
+            #print(f'{vehicle.n_min} {vehicle.n_max}')
             if sigma < 0:
-                u_control = [vehicle.n_min, vehicle.n_max]
+                u_control = [n_rot - n_forward, n_forward + n_rot]
             elif sigma > 0:
-                u_control = [vehicle.n_max, vehicle.n_min]
+                u_control = [n_forward + n_rot, n_rot - n_forward]
             else:
                 u_control = [0, 0]
             controls.append(u_control)

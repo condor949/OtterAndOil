@@ -329,7 +329,7 @@ class Otter(Vehicle):
         nu_dot = Dnu_c + np.matmul(self.Minv, sum_tau)  # USV dynamics
         n_dot = (u_control - n) / self.T_n  # propeller dynamics
 
-        real = True
+        real = False
         # Forward Euler integration [k+1]
         if real:
             n = u_control

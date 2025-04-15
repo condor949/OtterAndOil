@@ -32,7 +32,7 @@ def simultaneous_simulate(controller: BaseController):
     # Simulator for-loop
     for i in tqdm(range(0, controller.N), desc=f"Vehicle Simulation x{controller.number_of_vehicles}"):
 
-        m_u_control = controller.generate_control(m_eta, i)
+        m_u_control = controller.generate_control(m_eta, i, m_nu)
 
         for vehicle in controller.vehicles:
             eta = m_eta[vehicle.serial_number]

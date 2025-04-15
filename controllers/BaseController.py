@@ -17,7 +17,7 @@ class BaseController(ABC):
         self.colors = {vehicle.serial_number: vehicle.color for vehicle in vehicles}
         self.data_storage = None
 
-    def generate_control(self, positions, step) -> Sequence:
+    def generate_control(self, positions, step, relative_velocities) -> Sequence:
         pass
 
     def set_data_storage(self, data_storage) -> None:
