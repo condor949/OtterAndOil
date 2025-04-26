@@ -73,7 +73,7 @@ class IntensityBasedController(BaseController):
             n_rot = 30 * sigma
             #print(f"{n_forward} {n_rot}")
             #print(f"{n_forward - n_rot} {n_forward + n_rot}")
-            #print(f'{vehicle.n_min} {vehicle.n_max}')
+            print(f'{vehicle.n_min} {vehicle.n_max}')
             if sigma < 0:
                 u_control = [n_rot - n_forward, n_forward + n_rot]
             elif sigma > 0:

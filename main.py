@@ -93,8 +93,8 @@ if __name__ == '__main__':
         data_storage = DataStorage(space.type, i)
 
         space.set_data_storage(data_storage)
-        plotting_all(space,
-                     store_plot=arguments.store_plot)
+        #plotting_all(space,
+        #             store_plot=arguments.store_plot)
 
         controller = cs.create_instance(arguments.controller_type,
                                         vehicles=vehicles,
@@ -108,13 +108,13 @@ if __name__ == '__main__':
         print(data_storage)
 
         swarmData = simultaneous_simulate(controller=controller)
-        plotting_all(controller,
-                     separating_plots=arguments.separating_plots,
-                     not_animated=arguments.not_animated,
-                     isometric=arguments.isometric,
-                     store_plot=arguments.store_plot,
-                     big_picture=arguments.big_picture,
-                     swarmData=swarmData)
+        #plotting_all(controller,
+        #             separating_plots=arguments.separating_plots,
+        #             not_animated=arguments.not_animated,
+        #             isometric=arguments.isometric,
+        #             store_plot=arguments.store_plot,
+        #             big_picture=arguments.big_picture,
+        #             swarmData=swarmData)
         # controller.plotting_intensity()
         # controller.plotting_sigma()
         # controller.plotting_quality()
