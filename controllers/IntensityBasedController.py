@@ -43,6 +43,11 @@ class IntensityBasedController(BaseController):
         self.sigmas = np.zeros((self.number_of_vehicles, self.N), dtype=float)
         self.quality_array = np.zeros((self.number_of_vehicles, self.N), dtype=float)
         self.type = 'Individual intensity based controller'
+        self.u_controls = []
+        self.dss = []
+        self.n_rots = []
+        self.n_forwards = []
+        self.nus = []
 
     def __str__(self):
         return (f'---controller--------------------------------------------------------------------------\n'
@@ -52,11 +57,24 @@ class IntensityBasedController(BaseController):
                 f'Simulation time: {round(self.sim_time)} seconds\n'
                 f'Numbers of vehicles: {self.number_of_vehicles}')
 
-    def berman_law(self, vehicle, step, f_current, f_prev, ds):
+    def matveev_law(self, vehicle, step, f_current, f_prev, ds):
         self.der[vehicle, step] = (f_current - f_prev) / self.sample_time
         self.mu_tanh[vehicle, step] = self.mu * np.tanh(f_current - self.f0)
+        #self.sigmas[vehicle, step] = -np.sign(self.der[vehicle, step] + self.mu_tanh[vehicle, step])
         self.sigmas[vehicle, step] = -np.sign(self.der[vehicle, step] + ds * self.mu_tanh[vehicle, step])
         return self.sigmas[vehicle, step]
+
+    def return_ds(self, nu):
+        return NotImplemented('This method should be defined later.')
+
+    def return_n_rot(self, sigma):
+        return NotImplemented('This method should be defined later.')
+
+    def return_n_forward(self, f_current):
+        return NotImplemented('This method should be defined later.')
+
+    def return_u_control(self, sigma, n_min, n_max, n_rot, n_forward):
+        return NotImplemented('This method should be defined later.')
 
     def generate_control(self, positions, step, relative_velocities):
         m_f_current = [self.space.get_intensity(eta[1], eta[0]) for eta in positions]
@@ -67,20 +85,31 @@ class IntensityBasedController(BaseController):
             #print(f_current)
             f_prev = self.m_f_prev[vehicle.serial_number]
             nu = relative_velocities[vehicle.serial_number]
-            ds = np.sqrt(nu[0] ** 2 + nu[1] ** 2)
-            sigma = self.berman_law(vehicle.serial_number, step, f_current, f_prev, ds)
-            n_forward = 100 - 80 * np.exp(-0.01 * (f_current - self.f0)**2)
-            n_rot = 30 * sigma
+            self.nus.append(nu)
+            ds = self.return_ds(nu)
+            #np.sqrt(nu[0] ** 2 + nu[1] ** 2)
+            self.dss.append(ds)
+            sigma = self.matveev_law(vehicle.serial_number, step, f_current, f_prev, ds)
+            n_forward = self.return_n_forward(f_current)
+            #100 - 80 * np.exp(-0.01 * (f_current - self.f0)**2)
+            n_rot = self.return_n_rot(sigma)
+            #30 * sigma
+            self.n_rots.append([n_rot, n_forward])
+            #self.n_forwards.append(n_forward)
             #print(f"{n_forward} {n_rot}")
             #print(f"{n_forward - n_rot} {n_forward + n_rot}")
-            print(f'{vehicle.n_min} {vehicle.n_max}')
-            if sigma < 0:
-                u_control = [n_rot - n_forward, n_forward + n_rot]
-            elif sigma > 0:
-                u_control = [n_forward + n_rot, n_rot - n_forward]
-            else:
-                u_control = [0, 0]
+            #print(f'{vehicle.n_min} {vehicle.n_max}')
+            u_control = self.return_u_control(sigma, vehicle.n_min, vehicle.n_max, n_rot, n_forward)
+            # if sigma < 0:
+            #     #u_control = [vehicle.n_min, vehicle.n_max]
+            #     u_control = [n_rot - n_forward, n_forward + n_rot]
+            # elif sigma > 0:
+            #     #u_control = [vehicle.n_max, vehicle.n_min]
+            #     u_control = [n_forward + n_rot, n_rot - n_forward]
+            # else:
+            #     u_control = [0, 0]
             controls.append(u_control)
+            self.u_controls.append(u_control)
             #print(u_control)
             self.intensity[vehicle.serial_number, step] = f_current
             self.quality_array[vehicle.serial_number, step] = self.space.get_nearest_contour_point_norm(positions[vehicle.serial_number][0], positions[vehicle.serial_number][1])

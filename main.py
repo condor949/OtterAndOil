@@ -8,6 +8,7 @@ import argparse
 import spaces as sp
 import vehicles as vs
 import controllers as cs
+from controllers import IntensityBasedController
 
 from lib import *
 from tools import *
@@ -107,14 +108,56 @@ if __name__ == '__main__':
         print(controller)
         print(data_storage)
 
+
+        def return_ds(self, nu):
+            #return 1
+            return np.sqrt(nu[0] ** 2 + nu[1] ** 2)
+
+
+        IntensityBasedController.return_ds = return_ds
+
+
+        def return_n_rot(self, sigma):
+            #return 0
+            return 30 * sigma
+
+
+        IntensityBasedController.return_n_rot = return_n_rot
+
+
+        def return_n_forward(self, f_current):
+            #return 0
+            return 100 - 80 * np.exp(-0.01 * (f_current - self.f0) ** 2)
+
+
+        IntensityBasedController.return_n_forward = return_n_forward
+
+
+        def return_u_control(self, sigma, n_min, n_max, n_rot, n_forward):
+            if sigma < 0:
+                # return [vehicle.n_min, vehicle.n_max]
+                return [n_rot - n_forward, n_forward + n_rot]
+            elif sigma > 0:
+                # return [vehicle.n_max, vehicle.n_min]
+                return [n_forward + n_rot, n_rot - n_forward]
+            else:
+                return [0, 0]
+
+
+        IntensityBasedController.return_u_control = return_u_control
+
         swarmData = simultaneous_simulate(controller=controller)
-        #plotting_all(controller,
-        #             separating_plots=arguments.separating_plots,
-        #             not_animated=arguments.not_animated,
-        #             isometric=arguments.isometric,
-        #             store_plot=arguments.store_plot,
-        #             big_picture=arguments.big_picture,
-        #             swarmData=swarmData)
+        np.array(controller.u_controls).dump('u_controls.npy')
+        np.array(controller.nus).dump('nus.npy')
+        np.array(controller.dss).dump('dss.npy')
+        np.array(controller.n_rots).dump('n_forwards.npy')
+        plotting_all(controller,
+                    separating_plots=arguments.separating_plots,
+                    not_animated=arguments.not_animated,
+                    isometric=arguments.isometric,
+                    store_plot=arguments.store_plot,
+                    big_picture=arguments.big_picture,
+                    swarmData=swarmData)
         # controller.plotting_intensity()
         # controller.plotting_sigma()
         # controller.plotting_quality()
