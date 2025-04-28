@@ -1,6 +1,5 @@
 numpy
 matplotlib
-argparse
 tqdm
 scipy
 pyqt5
