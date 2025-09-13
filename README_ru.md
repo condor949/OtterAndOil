@@ -20,48 +20,48 @@ python main.py -c config.json
 ## Принцип работы
 
 Скрипт `main.py` читает настройки из файла конфигурации и создаёт необходимые
-объекты: транспортные средства, пространство и контроллер【F:main.py†L41-L117】.
+объекты: транспортные средства, пространство и контроллер.
 Для каждой серии расчётов класс `DataStorage` формирует каталог с меткой
-времени внутри `data`, куда затем сохраняются все изображения【F:tools/dataStorage.py†L33-L95】.
+времени внутри `data`, куда затем сохраняются все изображения.
 При запуске с файлом `config.json` в каталоге `data/expt_gaussian_s1_<время>`
 появятся:
 
-- `gaussian_<время>.png` — карта интенсивности пространства【F:spaces/BaseSpace.py†L107-L119】;
+- `gaussian_<время>.png` — карта интенсивности пространства;
 - `sigmas_v0_<время>.png`, `cumulative_<время>.png`, `intensity_<время>.png`
-  — графики параметров контроллера【F:controllers/IntensityBasedController.py†L101-L176】;
+  — графики параметров контроллера;
 - `track_<время>.png` и `track_<время>.gif` — траектория движения
-  агентов【F:controllers/IntensityBasedController.py†L240-L264】.
+  агентов.
 
 ## Структура проекта
 
 - **controllers** – алгоритмы управления:
   - `BaseController` — базовый интерфейс для расчёта управляющих воздействий и
-    хранения настроек симуляции【F:controllers/BaseController.py†L7-L24】
+    хранения настроек симуляции
   - `IntensityBasedController` — индивидуальный контроллер, использующий закон
     Матвеева и данные поля интенсивности для переключения пропеллеров
-    ([doi:10.1109/TAC.2023.3284595](https://doi.org/10.1109/TAC.2023.3284595))【F:controllers/IntensityBasedController.py†L31-L75】
-  - `SwarmController` — контроллер для управления роем роботов【F:controllers/SwarmController.py†L5-L41】
+    ([doi:10.1109/TAC.2023.3284595](https://doi.org/10.1109/TAC.2023.3284595))
+  - `SwarmController` — контроллер для управления роем роботов
 - **vehicles** – модели транспортных средств:
   - `Vehicle` — базовый класс с общими параметрами, такими как начальная точка и
-    методы динамики【F:vehicles/vehicle.py†L6-L36】
+    методы динамики
   - `Dubins` — упрощённая модель колёсного робота с управлением угловыми
-    скоростями колёс и геометрическими параметрами шасси【F:vehicles/dubins.py†L12-L71】
+    скоростями колёс и геометрическими параметрами шасси
   - `Otter` — подробная модель катамарана Otter USV с параметрами корпуса и
     системой управления курсом, адаптированная из
-    [PythonVehicleSimulator](https://github.com/cybergalactic/PythonVehicleSimulator/blob/master/src/python_vehicle_simulator/vehicles/otter.py)【F:vehicles/otter.py†L50-L116】
+    [PythonVehicleSimulator](https://github.com/cybergalactic/PythonVehicleSimulator/blob/master/src/python_vehicle_simulator/vehicles/otter.py)
 - **spaces** – описание исследуемого пространства:
   - `BaseSpace` — инфраструктура для хранения пиков, смещения координат и
-    построения поверхности интенсивности【F:spaces/BaseSpace.py†L9-L119】
-  - `Gaussian3DSpace` — генерация гауссовых пиков заданной формы【F:spaces/GaussianSpace.py†L5-L30】
+    построения поверхности интенсивности
+  - `Gaussian3DSpace` — генерация гауссовых пиков заданной формы
   - `Parabolic3DSpace` — параболические пиковые формы с отсечением отрицательных
-    значений【F:spaces/ParabolicSpace.py†L5-L37】
+    значений
 - **tools** – вспомогательные утилиты:
   - `dataStorage` — создание папок с отметкой времени и сохранение конфигурации
-    и результатов【F:tools/dataStorage.py†L7-L96】【F:tools/dataStorage.py†L98-L132】
+    и результатов
   - `random_generators` — генераторы случайных стартовых точек, цветов и другие
-    утилиты【F:tools/random_generators.py†L7-L71】【F:tools/random_generators.py†L74-L91】
+    утилиты
   - `common` — функции для автоматического вызова методов визуализации или
-    сохранения результатов【F:tools/common.py†L1-L17】
+    сохранения результатов
 - **lib** – библиотека с функциями динамики и одновременной симуляцией (`gnc.py`,
   `simultaneousLoop.py` и др.).
 - **space-genereator.py** – графический инструмент на PyQt5 для интерактивного
@@ -70,7 +70,7 @@ python main.py -c config.json
 ## Конфигурационные файлы
 
 ### `config.json`
-Основной файл настроек запуска. Поля:
+Основной файл настроек. Поля:
 
 | Поле | Описание |
 |------|----------|
@@ -102,15 +102,15 @@ python main.py -c config.json
 | `V_current` | скорость текущей среды |
 | `beta_current` | направление течения |
 
-Все поля можно видеть в исходном файле `config.json`【F:config.json†L1-L28】.
+Все поля можно видеть в исходном файле `config.json`.
 Тот же набор параметров реализован в классе
-[`Arguments`](tools/dataStorage.py)【F:tools/dataStorage.py†L98-L132】,
+[`Arguments`](tools/dataStorage.py),
 который используется для сериализации конфигурации.
 
 ### `peaks_.json`
 Определяет набор пиков интенсивности для пространства. Каждый объект содержит
 координаты центра (`x0`, `y0`), амплитуду и параметры ширины `sigma_x` и
-`sigma_y`【F:peaks_.json†L1-L36】.
+`sigma_y`.
 
 ## Вспомогательные скрипты
 - `space-genereator.py` — позволяет интерактивно создать файл пиков, описывающий
