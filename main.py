@@ -91,7 +91,7 @@ if __name__ == '__main__':
     print(space)
 
     for i in range(arguments.cycles):
-        data_storage = DataStorage(space.type, i)
+        data_storage = DataStorage(space.type, i, arguments.cache_dir)
 
         space.set_data_storage(data_storage)
         #plotting_all(space,

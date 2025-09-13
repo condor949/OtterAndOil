@@ -79,11 +79,11 @@ def clean_data() -> None:
 
 
 class DataStorage:
-    def __init__(self, typename, series):
+    def __init__(self, typename, series, cache_dir="data"):
         self.timestamped_suffix = create_timestamped_suffix()
         self.timestamped_folder = create_timestamped_folder(typename,
                                                             f"s{series + 1}",
-                                                            timestamped_suffix=self.timestamped_suffix)
+                                                            timestamped_suffix=self.timestamped_suffix, base_path=f"./{cache_dir}")
 
     def __str__(self):
         return f'Result folder: {self.timestamped_folder}'
