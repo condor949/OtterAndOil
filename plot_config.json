@@ -1,0 +1,26 @@
+{
+  "intensity": {
+    "x": "simTime",
+    "y": "intensity",
+    "x_label": "Time, s",
+    "y_label": "Intensity, s.u.",
+    "legend": "Agent {i}",
+    "title": "Agents intensity"
+  },
+  "error": {
+    "x": "simTime",
+    "y": "errors_norm",
+    "x_label": "Time, s",
+    "y_label": "Error",
+    "legend": "Agent {i}",
+    "title": "Agents normalized error"
+  },
+  "error_avg": {
+    "x": "simTime",
+    "y": "errors_avg",
+    "x_label": "Time, s",
+    "y_label": "Cumulative average error",
+    "legend": "Agent {i}",
+    "title": "Agents trend error"
+  }
+}

@@ -8,7 +8,6 @@ import argparse
 import spaces as sp
 import vehicles as vs
 import controllers as cs
-from controllers import IntensityBasedController
 
 from lib import *
 from tools import *
@@ -94,8 +93,8 @@ if __name__ == '__main__':
         data_storage = DataStorage(space.type, i, arguments.cache_dir)
 
         space.set_data_storage(data_storage)
-        #plotting_all(space,
-        #             store_plot=arguments.store_plot)
+        plotting_all(space,
+                    store_plot=arguments.store_plot)
 
         controller = cs.create_instance(arguments.controller_type,
                                         vehicles=vehicles,
@@ -103,70 +102,46 @@ if __name__ == '__main__':
                                         sample_time=arguments.sample_time,
                                         space=space,
                                         FPS=arguments.FPS,
-                                        isolines=arguments.isolines)
+                                        isolines=arguments.isolines,
+                                        eps=arguments.eps,
+                                        e_max_cap=arguments.error_max_cap,
+                                        dynamic_error_max=arguments.dynamic_error_max,
+                                        smoothing=arguments.smoothing,
+                                        plot_config_path=arguments.plot_config)
         controller.set_data_storage(data_storage)
         print(controller)
         print(data_storage)
 
-
-        def return_ds(self, nu):
-            #return 1
-            return np.sqrt(nu[0] ** 2 + nu[1] ** 2)
-
-
-        IntensityBasedController.return_ds = return_ds
-
-
-        def return_n_rot(self, sigma):
-            #return 0
-            return 30 * sigma
-
-
-        IntensityBasedController.return_n_rot = return_n_rot
-
-
-        def return_n_forward(self, f_current):
-            #return 0
-            return 100 - 80 * np.exp(-0.01 * (f_current - self.f0) ** 2)
-
-
-        IntensityBasedController.return_n_forward = return_n_forward
-
-
-        def return_u_control(self, sigma, n_min, n_max, n_rot, n_forward):
-            if sigma < 0:
-                # return [vehicle.n_min, vehicle.n_max]
-                return [n_rot - n_forward, n_forward + n_rot]
-            elif sigma > 0:
-                # return [vehicle.n_max, vehicle.n_min]
-                return [n_forward + n_rot, n_rot - n_forward]
-            else:
-                return [0, 0]
-
-
-        IntensityBasedController.return_u_control = return_u_control
-
         swarmData = simultaneous_simulate(controller=controller)
-        np.array(controller.u_controls).dump('u_controls.npy')
+        # np.array(controller.u_controls).dump('u_controls.npy')
         np.array(controller.nus).dump('nus.npy')
         np.array(controller.dss).dump('dss.npy')
         np.array(controller.n_rots).dump('n_forwards.npy')
-        plotting_all(controller,
-                    separating_plots=arguments.separating_plots,
-                    not_animated=arguments.not_animated,
-                    isometric=arguments.isometric,
-                    store_plot=arguments.store_plot,
-                    big_picture=arguments.big_picture,
-                    swarmData=swarmData)
-        # controller.plotting_intensity()
+        np.array(controller.times_outside).dump('times_outside.npy')
+        # plotting_all(controller,
+        #             separating_plots=arguments.separating_plots,
+        #             not_animated=arguments.not_animated,
+        #             isometric=arguments.isometric,
+        #             store_plot=arguments.store_plot,
+        #             big_picture=arguments.big_picture,
+        #             swarmData=swarmData)
+        controller.plotting_intensity(x=controller.simTime, y=controller.intensity, store_plot=arguments.store_plot, for_publication=arguments.for_publication, colors=controller.colors)
+        controller.plotting_error(x=controller.simTime, y=controller.errors_norm, store_plot=arguments.store_plot, for_publication=arguments.for_publication, colors=controller.colors)
+        cumulative_mean = np.cumsum(controller.errors_norm, axis=1) / (np.arange(len(controller.errors_norm[0])) + 1)
+        #cumulative_mean = cumulative_mean.T
+        controller.plotting_error_avg(x=controller.simTime, y=cumulative_mean, store_plot=arguments.store_plot, for_publication=arguments.for_publication, colors=controller.colors)
         # controller.plotting_sigma()
         # controller.plotting_quality()
-        # controller.plotting_track(swarmData,
-        #                             arguments.big_picture,
-        #                             arguments.not_animated)
+        controller.plotting_track(swarmData,
+                                  arguments.big_picture,
+                                  arguments.not_animated,
+                                  arguments.store_plot)
 
-        # arguments.set_data_storage(data_storage)
-        # arguments.store_in_config()
-        # space.store_in_config()
+        arguments.set_data_storage(data_storage)
+        arguments.store_in_config()
+        space.store_in_config()
+        for i, error_sum in enumerate(controller.sum_error_values):
+            print(f'vihicle {i}: e_norm = {error_sum / controller.sim_time}')
+            print(controller.e_max)
 
     print('Done!')

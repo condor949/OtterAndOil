@@ -1,6 +1,8 @@
 from .BaseController import *
 from .SwarmController import *
 from .IntensityBasedController import *
+from .IntensityAndLinearVelocityController import *
+from .IntensityAndLinearVelocityPIDController import *
 
 controller_instance = {}
 
@@ -17,3 +19,5 @@ def create_instance(class_name: str, **arguments) -> BaseController:
 
 register_class(SwarmController)
 register_class(IntensityBasedController)
+register_class(IntensityAndLinearVelocityController)
+register_class(IntensityAndLinearVelocityPIDController)
