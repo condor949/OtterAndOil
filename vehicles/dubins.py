@@ -55,6 +55,20 @@ class Dubins(Vehicle):
         ]
         self.dimU = len(self.controls)
 
+        # Propeller configuration/input matrix. Relates wheel angular
+        # velocities to the desired surge velocity (tau_X) and yaw rate
+        # (tau_N). The relationship for a differential drive vehicle is
+        # given by
+        #   v = R/2 * (n1 + n2)
+        #   w = R/B * (n2 - n1)
+        # where v is the surge velocity and w is the yaw rate.  This can be
+        # written compactly as [v, w]^T = B * [n1, n2]^T.  The inverse of
+        # this matrix is used in `controlAllocation` to obtain the wheel
+        # velocities from desired v and w.
+        B_mat = np.array([[self.R / 2, self.R / 2],
+                          [-self.R / self.B, self.R / self.B]])
+        self.Binv = np.linalg.inv(B_mat)
+
     def __str__(self):
         return (f'---vehicle--------------------------------------------------------------------------\n'
                 f'{self.type}\n'
@@ -77,13 +91,17 @@ class Dubins(Vehicle):
         tau = np.array([tau_X, tau_N])  # tau = B * u_alloc
         u_alloc = np.matmul(self.Binv, tau)  # u_alloc = inv(B) * tau
 
-        # u_alloc = abs(n) * n --> n = sign(u_alloc) * sqrt(u_alloc)
-        n1 = np.sign(u_alloc[0]) * math.sqrt(abs(u_alloc[0]))
-        n2 = np.sign(u_alloc[1]) * math.sqrt(abs(u_alloc[1]))
+        # For the Dubins vehicle the relationship between the desired surge
+        # velocity/yaw rate and the wheel angular velocities is linear.  Thus
+        # the allocated inputs correspond directly to the left and right
+        # wheel angular velocities without the quadratic transformation used
+        # for the Otter vehicle.
+        n1 = u_alloc[0]
+        n2 = u_alloc[1]
 
         return n1, n2
 
     def repositioning(self, eta, nu, sample_time):
         # print(f'eta = {eta}')
         # print(f'nu = {nu}')
-        return eta+nu*sample_time
+        return eta + nu * sample_time
