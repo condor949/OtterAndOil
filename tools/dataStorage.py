@@ -111,6 +111,7 @@ class Arguments:
                     "isometric": self.isometric,
                     "dynamic_error_max": self.dynamic_error_max,
                     "plot_config": self.plot_config,
+                    "use_latex": getattr(self, 'use_latex', True),
                     "error_max_cap": self.error_max_cap,
                     "eps": self.eps,
                     "isolines": self.isolines,

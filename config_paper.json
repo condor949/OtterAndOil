@@ -14,6 +14,7 @@
     "peak_type": "gaussian",
     "controller_type": "intensity",
     "vehicle_types": ["dubins", "otter"],
+    "use_latex": true,
     "start_points": [[-10, 0],[-8, 0]],
     "shift_vehicle": [-10, 0],
     "shift_xyz": [0, 0, 0],

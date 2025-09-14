@@ -9,6 +9,7 @@
     "dynamic_error_max": false,
     "for_publication": true,
     "plot_config": "plot_config.json",
+    "use_latex": true,
     "error_max_cap": 20,
     "eps": 0.001,
     "smoothing": 99,

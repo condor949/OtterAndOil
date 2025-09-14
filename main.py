@@ -107,7 +107,8 @@ if __name__ == '__main__':
                                         e_max_cap=arguments.error_max_cap,
                                         dynamic_error_max=arguments.dynamic_error_max,
                                         smoothing=arguments.smoothing,
-                                        plot_config_path=arguments.plot_config)
+                                        plot_config_path=arguments.plot_config,
+                                        use_latex=getattr(arguments, 'use_latex', True))
         controller.set_data_storage(data_storage)
         print(controller)
         print(data_storage)

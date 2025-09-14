@@ -14,7 +14,7 @@ pip install -r requirements.txt
 python main.py -c config.json
 ```
 
-*LaTeX is used when rendering plots, so a TeX distribution may be required for a full run.*
+*LaTeX is used when rendering plots, so a TeX distribution may be required for a full run. If you do not want to install LaTeX packages, set `use_latex` to `false` in your configuration to render labels using plain text instead.*
 
 ## How it works
 
@@ -65,6 +65,7 @@ The main launch configuration file. Fields:
 | `peaks_filename` | file describing intensity peaks |
 | `cache_dir` | directory to save results |
 | `peak_type` | space type (`gaussian` or `parabolic`) |
+| `use_latex` | render plot labels via LaTeX (`true`) or plain text (`false`) |
 | `controller_type` | controller in use |
 | `vehicle_types` | list of vehicle types |
 | `start_points` | starting coordinates of agents |

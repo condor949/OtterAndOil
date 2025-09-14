@@ -19,7 +19,8 @@ class BaseController(ABC):
                  e_max_cap: float,
                  dynamic_error_max: bool,
                  smoothing: float,
-                 plot_config_path: str):
+                 plot_config_path: str,
+                 use_latex: bool = True):
         self.sample_time = sample_time
         self.sim_time = sim_time
         self.N = round(sim_time / sample_time) + 1
@@ -40,6 +41,7 @@ class BaseController(ABC):
         self.errors_max = np.zeros((self.number_of_vehicles, self.N), dtype=float)
         self.errors_avg = np.zeros((self.number_of_vehicles, self.N), dtype=float)
         self.dpi = 150
+        self.use_latex = use_latex
 
         with open(plot_config_path, 'r') as f:
             self.plot_config = json.load(f)
@@ -127,7 +129,7 @@ class BaseController(ABC):
             if y.ndim == 1:
                 y = np.expand_dims(y, axis=0)
 
-            plt.rc('text', usetex=True)
+            plt.rc('text', usetex=self.use_latex)
             plt.rc('font', size=25 if for_publication else 12)
 
             fig_size_big = (30, 20)

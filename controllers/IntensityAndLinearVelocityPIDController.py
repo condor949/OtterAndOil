@@ -11,6 +11,7 @@ class IntensityAndLinearVelocityPIDController(IntensityBasedController):
                  dynamic_error_max: bool,
                  smoothing: float,
                  plot_config_path: str,
+                 use_latex: bool = True,
                  FPS: int = 30,
                  isolines=10,
                  mu=1):
@@ -25,7 +26,8 @@ class IntensityAndLinearVelocityPIDController(IntensityBasedController):
                          e_max_cap=e_max_cap,
                          dynamic_error_max=dynamic_error_max,
                          smoothing=smoothing,
-                         plot_config_path=plot_config_path)
+                         plot_config_path=plot_config_path,
+                         use_latex=use_latex)
         self.type = 'Individual intensity controller with linear velocity PID control'
         self.v0 = 20
         self.t_max = 5

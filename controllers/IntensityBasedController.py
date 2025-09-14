@@ -5,7 +5,6 @@ from math import pi
 from tqdm import tqdm
 from matplotlib import rc, rcParams, rcParamsDefault
 rcParams.update(rcParamsDefault)
-rcParams["text.usetex"] = True
 from spaces import BaseSpace
 from functools import partial
 from tools.dataStorage import *
@@ -36,6 +35,7 @@ class IntensityBasedController(BaseController):
                  dynamic_error_max: bool,
                  smoothing: float,
                  plot_config_path: str,
+                 use_latex: bool = True,
                  FPS=30,
                  isolines=10,
                  mu=1):
@@ -47,7 +47,8 @@ class IntensityBasedController(BaseController):
                          e_max_cap=e_max_cap,
                          dynamic_error_max=dynamic_error_max,
                          smoothing=smoothing,
-                         plot_config_path=plot_config_path)
+                         plot_config_path=plot_config_path,
+                         use_latex=use_latex)
         self.m_f_prev = [space.get_intensity(vehicle.starting_point[1], vehicle.starting_point[0]) for vehicle in vehicles]
         self.mu = mu
         self.FPS = FPS
@@ -64,6 +65,7 @@ class IntensityBasedController(BaseController):
         self.n_rots = []
         self.n_forwards = []
         self.nus = []
+        rcParams["text.usetex"] = self.use_latex
 
     def __str__(self):
         return (f'---controller--------------------------------------------------------------------------\n'
@@ -117,10 +119,13 @@ class IntensityBasedController(BaseController):
 
         for vehicle in range(self.number_of_vehicles):
             plt.figure()
+            rc('text', usetex=self.use_latex)
             rc('font', size=30)
             result[vehicle][0] = 0
-            plt.plot(self.simTime, result[vehicle], label='$\\dot{f}$')
-            plt.plot(self.simTime, self.mu_tanh[vehicle], label='$\\mu\\chi(f - f_\\text{target})$')
+            label_df = r'$\\dot{f}$' if self.use_latex else 'dot f'
+            label_mu = r'$\\mu\\chi(f - f_\\text{target})$' if self.use_latex else 'mu chi(f - f_target)'
+            plt.plot(self.simTime, result[vehicle], label=label_df)
+            plt.plot(self.simTime, self.mu_tanh[vehicle], label=label_mu)
             plt.hlines(0, xmin=0, xmax=np.max(self.simTime), color='gray') # 0 axis
             plt.xlabel('Time, s', fontsize=12)
             # plt.ylabel('Sigma', fontsize=12)
@@ -138,9 +143,11 @@ class IntensityBasedController(BaseController):
         cumulative_quality = cumsum(self.sample_time*self.quality_array, axis=1)
 
         plt.figure()
+        rc('text', usetex=self.use_latex)
         rc('font', size=30)
         plt.xlabel('Time, s')
-        plt.ylabel(ylabel='Total area integral, $m^2$')
+        ylabel = r'Total area integral, $m^2$' if self.use_latex else 'Total area integral, m^2'
+        plt.ylabel(ylabel=ylabel)
         for i in range(self.number_of_vehicles):
             plt.plot(self.simTime, cumulative_quality[i], label=f'Agent {i+1}', color=self.colors.get(i))
         plt.legend()
