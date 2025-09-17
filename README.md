@@ -87,6 +87,7 @@ Defines the set of intensity peaks for the space. Each object contains the cente
 
 ## Auxiliary scripts
 - `space-genereator.py` — allows you to interactively create a peak file describing the field shape. The result is saved in `peaks_*.json` format.
+- `main.ipynb` — outdated, will be updated from the linear-velocity-control branch
 
 ## License
 
