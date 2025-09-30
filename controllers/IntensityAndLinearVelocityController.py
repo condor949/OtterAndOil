@@ -5,6 +5,7 @@ from .IntensityBasedController import IntensityBasedController
 
 class IntensityAndLinearVelocityController(IntensityBasedController):
     name = 'intensity_and_linear_velocity_nonlinear_control'
+    controller_type = 'individual'
     def __init__(self, vehicles, sim_time: int, sample_time: float, space: BaseSpace,
                  eps: float,
                  e_max_cap: float,
@@ -72,7 +73,7 @@ class IntensityAndLinearVelocityController(IntensityBasedController):
             controls.append(u_control)
             self.u_controls.append(u_control)
             self.intensity[vehicle.serial_number, step] = f_current
-            self.quality_array[vehicle.serial_number, step] = self.space.get_nearest_contour_point_norm(positions[vehicle.serial_number][0], positions[vehicle.serial_number][1])
+            #self.quality_array[vehicle.serial_number, step] = self.space.get_nearest_contour_point_norm(positions[vehicle.serial_number][0], positions[vehicle.serial_number][1])
 
         self.m_f_prev = m_f_current
         return controls

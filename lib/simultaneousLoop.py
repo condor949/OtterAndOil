@@ -34,24 +34,24 @@ def simultaneous_simulate(controller: BaseController):
 
         m_u_control = controller.generate_control(m_eta, i, m_nu)
 
-        for vehicle in controller.vehicles:
-            eta = m_eta[vehicle.serial_number]
-            nu = m_nu[vehicle.serial_number]
-            u_actual = m_u_actual[vehicle.serial_number]
-            u_control = m_u_control[vehicle.serial_number]
+        for internal_number, vehicle in enumerate(controller.vehicles):
+            eta = m_eta[internal_number]
+            nu = m_nu[internal_number]
+            u_actual = m_u_actual[internal_number]
+            u_control = m_u_control[internal_number]
 
             # t = i * sample_time  # simulation time
             # Store simulation data in simData
             signals = np.hstack((eta, nu, u_control, u_actual))
-            sim_data[vehicle.serial_number][i, :] = signals
+            sim_data[internal_number][i, :] = signals
 
             # Propagate vehicle attitude and  dynamics
             [nu, u_actual] = vehicle.dynamics(eta, nu, u_actual, u_control, controller.sample_time)
             eta = vehicle.repositioning(eta, nu, controller.sample_time)
 
-            m_eta[vehicle.serial_number] = eta
-            m_nu[vehicle.serial_number] = nu
-            m_u_actual[vehicle.serial_number] = u_actual
+            m_eta[internal_number] = eta
+            m_nu[internal_number] = nu
+            m_u_actual[internal_number] = u_actual
 
     # Store simulation time vector
     # controller.set_sim_time(np.arange(start=0, stop=t + sample_time, step=sample_time)[:, None])

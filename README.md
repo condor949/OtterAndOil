@@ -66,9 +66,7 @@ The main launch configuration file. Fields:
 | `cache_dir` | directory to save results |
 | `peak_type` | space type (`gaussian` or `parabolic`) |
 | `use_latex` | render plot labels via LaTeX (`true`) or plain text (`false`) |
-| `controller_type` | controller in use |
-| `vehicle_types` | list of vehicle types |
-| `start_points` | starting coordinates of agents |
+| `controller_vehicle_pairs` | array describing controller-to-vehicle assignments (see below) |
 | `shift_vehicle` | shift of all starting points |
 | `shift_xyz` | shift of the entire space |
 | `target_isoline` | level of the target isoline |
@@ -76,12 +74,26 @@ The main launch configuration file. Fields:
 | `sample_time` | discretization step |
 | `cycles` | number of experiment repetitions |
 | `radius` | radius for generating random start points |
-| `vehicles` | number of agents of each type |
 | `FPS` | frame rate when saving animation |
 | `V_current` | speed of the current medium |
 | `beta_current` | direction of the current |
 
 All fields can be seen in the original `config.json` file. The same set of parameters is implemented in the [`Arguments`](tools/dataStorage.py) class used for configuration serialization.
+
+#### `controller_vehicle_pairs`
+
+To run several controllers simultaneously — for example, one controller per vehicle — describe the assignments in the `controller_vehicle_pairs` array. Each object has the following fields:
+
+| Field | Description |
+|-------|-------------|
+| `controller_type` | name of the controller registered in [`controllers/__init__.py`](controllers/__init__.py) |
+| `vehicle_type` | vehicle type handled by the controller |
+| `vehicles` | number of vehicles of the specified type handled by the controller |
+| `start_points` *(optional)* | list of starting points (must match the `vehicles` count if provided) |
+
+If `start_points` is omitted, each vehicle starts at `[0, 0]`.
+
+The total number of vehicles is derived automatically from this array; no separate `vehicles` field is required.
 
 ### `peaks_.json`
 Defines the set of intensity peaks for the space. Each object contains the center coordinates (`x0`, `y0`), amplitude and width parameters `sigma_x` and `sigma_y`.

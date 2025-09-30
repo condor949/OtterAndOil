@@ -19,9 +19,20 @@
     "peaks_filename": "peaks_.json",
     "cache_dir": "data2",
     "peak_type": "gaussian",
-    "controller_type": "intensity",
-    "vehicle_types": ["otter"],
-    "start_points": [[-10, 0],[-8, 0]],
+    "controller_vehicle_pairs": [
+        {
+            "vehicle_type": "otter",
+            "controller_type": "intensity",
+            "vehicles": 2,
+            "start_points": [[-10, 0], [-8, 0]]
+        },
+        {
+            "vehicle_type": "otter",
+            "controller_type": "intensity_and_linear_velocity_nonlinear_pid_control",
+            "vehicles": 1,
+            "start_points": [[-6, 0]]
+        }
+    ],
     "shift_vehicle": [-10, 0],
     "shift_xyz": [0, 0, 0],
     "target_isoline": 10,
@@ -29,7 +40,6 @@
     "sample_time": 0.02,
     "cycles": 1,
     "radius": 1,
-    "vehicles": 1,
     "FPS": 30,
     "V_current": 0,
     "beta_current": 30.0

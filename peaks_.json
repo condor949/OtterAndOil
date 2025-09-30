@@ -3,7 +3,7 @@
     "x0": 0,
     "y0": 0,
     "amplitude": 30,
-    "sigma_x": 6,
-    "sigma_y": 6
+    "sigma_x": 16,
+    "sigma_y": 16
   }
 ]

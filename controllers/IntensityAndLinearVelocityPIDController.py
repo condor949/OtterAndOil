@@ -5,6 +5,7 @@ from .IntensityBasedController import IntensityBasedController
 
 class IntensityAndLinearVelocityPIDController(IntensityBasedController):
     name = 'intensity_and_linear_velocity_nonlinear_pid_control'
+    controller_type = 'individual'
     def __init__(self, vehicles, sim_time: int, sample_time: float, space: BaseSpace,
                  eps: float,
                  e_max_cap: float,
@@ -59,24 +60,24 @@ class IntensityAndLinearVelocityPIDController(IntensityBasedController):
     def generate_control(self, positions, step, relative_velocities):
         m_f_current = [self.space.get_intensity(eta[1], eta[0]) for eta in positions]
         controls = []
-        for vehicle in self.vehicles:
-            f_current = m_f_current[vehicle.serial_number]
+        for i, vehicle in enumerate(self.vehicles):
+            f_current = m_f_current[i]
             #print(f_current)
-            f_prev = self.m_f_prev[vehicle.serial_number]
-            nu = relative_velocities[vehicle.serial_number]
+            f_prev = self.m_f_prev[i]
+            nu = relative_velocities[i]
             self.nus.append(nu)
             ds = np.sqrt(nu[0] ** 2 + nu[1] ** 2)
             self.dss.append(ds)
-            sigma = self.matveev_law(vehicle.serial_number, step, f_current, f_prev, ds)
+            sigma = self.matveev_law(i, step, f_current, f_prev, ds)
             if abs(f_current) < self.eps:
                 self.time_outside = 0
             else:
                 self.time_outside += self.sample_time  # интегрирование
             self.times_outside.append(self.time_outside)
             e_norm = self.update_error_metrics(f_current)
-            self.sum_error_values[vehicle.serial_number] += e_norm
-            self.errors_max[vehicle.serial_number, step] = self.e_max
-            self.errors_norm[vehicle.serial_number, step] = e_norm
+            self.sum_error_values[i] += e_norm
+            self.errors_max[i, step] = self.e_max
+            self.errors_norm[i, step] = e_norm
             time_norm = min(self.time_outside / self.t_max, 1.0)
             n_forward = self.v0 + self.k_P * e_norm + self.k_I * self.time_outside
             n_rot = 30 * sigma
@@ -91,8 +92,8 @@ class IntensityAndLinearVelocityPIDController(IntensityBasedController):
                 u_control = [0, 0]
             controls.append(u_control)
             self.u_controls.append(u_control)
-            self.intensity[vehicle.serial_number, step] = f_current
-            self.quality_array[vehicle.serial_number, step] = self.space.get_nearest_contour_point_norm(positions[vehicle.serial_number][0], positions[vehicle.serial_number][1])
+            self.intensity[i, step] = f_current
+            #self.quality_array[i, step] = self.space.get_nearest_contour_point_norm(positions[i][0], positions[i][1])
 
         self.m_f_prev = m_f_current
         return controls

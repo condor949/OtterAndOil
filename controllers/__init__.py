@@ -17,6 +17,12 @@ def create_instance(class_name: str, **arguments) -> BaseController:
     else:
         raise ValueError(f"Unknown class name: {class_name}")
 
+def get_controller_type(class_name:str) -> str:
+    if class_name in controller_instance:
+        return controller_instance[class_name].controller_type
+    else:
+        raise ValueError(f"Unknown class name: {class_name}")
+
 register_class(SwarmController)
 register_class(IntensityBasedController)
 register_class(IntensityAndLinearVelocityController)

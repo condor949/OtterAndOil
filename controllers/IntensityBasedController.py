@@ -29,6 +29,7 @@ def cm2inch(value):  # inch to cm
 
 class IntensityBasedController(BaseController):
     name = 'intensity'
+    controller_type = 'individual'
     def __init__(self, vehicles, sim_time: int, sample_time: float, space: BaseSpace,
                  eps: float,
                  e_max_cap: float,
@@ -85,19 +86,19 @@ class IntensityBasedController(BaseController):
     def generate_control(self, positions, step, relative_velocities):
         m_f_current = [self.space.get_intensity(eta[1], eta[0]) for eta in positions]
         controls = []
-        for vehicle in self.vehicles:
-            f_current = m_f_current[vehicle.serial_number]
+        for i, vehicle in enumerate(self.vehicles):
+            f_current = m_f_current[i]
             #print(f_current)
-            f_prev = self.m_f_prev[vehicle.serial_number]
-            nu = relative_velocities[vehicle.serial_number]
+            f_prev = self.m_f_prev[i]
+            nu = relative_velocities[i]
             self.nus.append(nu)
-            sigma = self.matveev_law(vehicle.serial_number, step, f_current, f_prev)
-            self.errors[vehicle.serial_number,step] = abs(f_current)
+            sigma = self.matveev_law(i, step, f_current, f_prev)
+            self.errors[i,step] = abs(f_current)
             e_norm = self.update_error_metrics(f_current)
-            self.sum_error_values[vehicle.serial_number] += e_norm
-            self.errors_max[vehicle.serial_number, step] = self.e_max
-            self.errors_norm[vehicle.serial_number, step] = e_norm
-            self.errors_avg[vehicle.serial_number] = self.moving_average(self.errors_norm[vehicle.serial_number], 1000)
+            self.sum_error_values[i] += e_norm
+            self.errors_max[i, step] = self.e_max
+            self.errors_norm[i, step] = e_norm
+            self.errors_avg[i] = self.moving_average(self.errors_norm[i], 1000)
             if sigma < 0:
                 u_control = [vehicle.n_min, vehicle.n_max]
             elif sigma > 0:
@@ -105,8 +106,8 @@ class IntensityBasedController(BaseController):
             else:
                 u_control = [0, 0]
             controls.append(u_control)
-            self.intensity[vehicle.serial_number, step] = f_current
-            self.quality_array[vehicle.serial_number, step] = self.space.get_nearest_contour_point_norm(positions[vehicle.serial_number][0], positions[vehicle.serial_number][1])
+            self.intensity[i, step] = f_current
+            #self.quality_array[i, step] = self.space.get_nearest_contour_point_norm(positions[i][0], positions[i][1])
 
         self.m_f_prev = m_f_current
         return controls
@@ -162,26 +163,26 @@ class IntensityBasedController(BaseController):
             plt.show()
         cumulative_quality.dump('cumulative.npy')
 
-    def plotting_short_distance(self, store_plot=False, **arguments):
-        plt.figure()
-        plt.xlabel('Time, s', fontsize=12)
-        plt.ylabel('Short distance, m', fontsize=12)
-        plt.title('The total value of the shortest distance at each point of the trajectory',
-                  fontsize=10)
-        #print(np.array(self.simTime).shape)
-        #print(np.array(self.quality_array).shape)
-        rc('font', size=30)
-        for i in range(self.number_of_vehicles):
-            plt.plot(self.simTime, self.quality_array[0], label=f'Agent {i+1}', color=self.colors.get(i))
-        plt.legend()
-        if store_plot:
-            plt.tight_layout()
-            plt.savefig(self.data_storage.get_path('short_distance', 'png'))
-            plt.close()
-        else:
-            plt.tight_layout()
-            plt.show()
-        self.quality_array.dump('short_distance.npy')
+    # def plotting_short_distance(self, store_plot=False, **arguments):
+    #     plt.figure()
+    #     plt.xlabel('Time, s', fontsize=12)
+    #     plt.ylabel('Short distance, m', fontsize=12)
+    #     plt.title('The total value of the shortest distance at each point of the trajectory',
+    #               fontsize=10)
+    #     #print(np.array(self.simTime).shape)
+    #     #print(np.array(self.quality_array).shape)
+    #     rc('font', size=30)
+    #     for i in range(self.number_of_vehicles):
+    #         plt.plot(self.simTime, self.quality_array[0], label=f'Agent {i+1}', color=self.colors.get(i))
+    #     plt.legend()
+    #     if store_plot:
+    #         plt.tight_layout()
+    #         plt.savefig(self.data_storage.get_path('short_distance', 'png'))
+    #         plt.close()
+    #     else:
+    #         plt.tight_layout()
+    #         plt.show()
+    #     self.quality_array.dump('short_distance.npy')
 
     def plotting_track(self, swarmData=None,
                            big_picture: bool = False,

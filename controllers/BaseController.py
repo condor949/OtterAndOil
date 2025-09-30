@@ -10,6 +10,7 @@ from collections.abc import Sequence
 
 class BaseController(ABC):
     name = 'base_controller'
+    controller_type = None
     def __init__(self,
                  vehicles,
                  sim_time: int,
@@ -28,7 +29,7 @@ class BaseController(ABC):
         self.space = space
         self.number_of_vehicles = len(vehicles)
         self.vehicles = vehicles
-        self.colors = {vehicle.serial_number: vehicle.color for vehicle in vehicles}
+        self.colors = {i: vehicle.color for i, vehicle in enumerate(vehicles)}
         self.data_storage = None
         self.sum_error_values = np.zeros(self.number_of_vehicles, dtype=float)
         self.eps = eps
