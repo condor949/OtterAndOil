@@ -5,6 +5,7 @@ from .IntensityBasedController import IntensityBasedController
 
 class IntensityAndLinearVelocityController(IntensityBasedController):
     name = 'intensity_and_linear_velocity_nonlinear_control'
+    abbreviation = 'ILV'
     controller_type = 'individual'
     def __init__(self, vehicles, sim_time: int, sample_time: float, space: BaseSpace,
                  eps: float,

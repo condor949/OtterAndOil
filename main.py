@@ -7,7 +7,7 @@ main.py: Main program for the Otter and Oil, which can be used
 import argparse
 import spaces as sp
 import vehicles as vs
-import controllers as cs
+from controllers.manager import ControllerManager
 
 from lib import *
 from tools import *
@@ -77,6 +77,8 @@ if __name__ == '__main__':
         for vehicle in vehicles:
             print(vehicle)
 
+    controller_manager = ControllerManager(controller_vehicle_groups, arguments)
+
     if arguments.clean_cache:
         clean_data()
     if arguments.big_picture:
@@ -98,54 +100,14 @@ if __name__ == '__main__':
         plotting_all(space,
                     store_plot=arguments.store_plot)
 
-        controller_runs = []
+        controller_runs = controller_manager.initialize_controllers(space=space,
+                                                                    data_storage=data_storage)
         swarm_data = []
-        for assignment_index, (assignment, vehicles) in enumerate(controller_vehicle_groups, start=1):
-            if cs.get_controller_type(assignment.controller_type) == "swarm":
-                controller = cs.create_instance(assignment.controller_type,
-                                                vehicles=vehicles,
-                                                sim_time=arguments.sim_time_sec,
-                                                sample_time=arguments.sample_time,
-                                                space=space,
-                                                FPS=arguments.FPS,
-                                                isolines=arguments.isolines,
-                                                eps=arguments.eps,
-                                                e_max_cap=arguments.error_max_cap,
-                                                dynamic_error_max=arguments.dynamic_error_max,
-                                                smoothing=arguments.smoothing,
-                                                plot_config_path=arguments.plot_config,
-                                                use_latex=getattr(arguments, 'use_latex', True))
-
-                controller_storage = data_storage.create_child_storage(f"controller_{assignment_index}")
-                controller.set_data_storage(controller_storage)
-                controller_runs.append((controller, None))
-                print(controller)
-                print(f'Controller storage: {controller_storage.timestamped_folder}')
-            elif cs.get_controller_type(assignment.controller_type) == "individual":
-                for vehicle in vehicles:
-                    controller = cs.create_instance(assignment.controller_type,
-                                                    vehicles=[vehicle],
-                                                    sim_time=arguments.sim_time_sec,
-                                                    sample_time=arguments.sample_time,
-                                                    space=space,
-                                                    FPS=arguments.FPS,
-                                                    isolines=arguments.isolines,
-                                                    eps=arguments.eps,
-                                                    e_max_cap=arguments.error_max_cap,
-                                                    dynamic_error_max=arguments.dynamic_error_max,
-                                                    smoothing=arguments.smoothing,
-                                                    plot_config_path=arguments.plot_config,
-                                                    use_latex=getattr(arguments, 'use_latex', True))
-
-                    controller_storage = data_storage.create_child_storage(f"controller_{assignment_index}")
-                    controller.set_data_storage(controller_storage)
-                    controller_runs.append((controller, None))
-                    print(controller)
-                    print(f'Controller storage: {controller_storage.timestamped_folder}')
 
         for i, (controller, _) in enumerate(controller_runs):
             result = simultaneous_simulate(controller=controller)
             controller_runs[i] = (controller, result)
+            controller_manager.set_run_result(i, result)
             swarm_data.append(result)
 
             # for attribute_name, filename in (("nus", "nus"),

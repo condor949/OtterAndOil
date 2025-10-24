@@ -4,6 +4,7 @@ import numpy as np
 
 class SwarmController(BaseController):
     name = 'swarm'
+    abbreviation = 'SWM'
     controller_type = 'swarm'
     def __init__(self, starting_points, sample_time, optimizing_function, alpha1=0.1, alpha2=1):
         super().__init__(vehicles, sim_time, sample_time, space)

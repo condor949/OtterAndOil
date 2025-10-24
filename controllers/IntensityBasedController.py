@@ -29,6 +29,7 @@ def cm2inch(value):  # inch to cm
 
 class IntensityBasedController(BaseController):
     name = 'intensity'
+    abbreviation = 'IBC'
     controller_type = 'individual'
     def __init__(self, vehicles, sim_time: int, sample_time: float, space: BaseSpace,
                  eps: float,

@@ -10,6 +10,7 @@ from collections.abc import Sequence
 
 class BaseController(ABC):
     name = 'base_controller'
+    abbreviation = 'BASE'
     controller_type = None
     def __init__(self,
                  vehicles,
