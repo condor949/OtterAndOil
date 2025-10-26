@@ -115,9 +115,7 @@ class ControllerManager:
                                eps=arguments.eps,
                                e_max_cap=arguments.error_max_cap,
                                dynamic_error_max=arguments.dynamic_error_max,
-                               smoothing=arguments.smoothing,
-                               plot_config_path=arguments.plot_config,
-                               use_latex=getattr(arguments, 'use_latex', True))
+                               smoothing=arguments.smoothing)
 
     def _register_controller(self,
                              controller: BaseController,

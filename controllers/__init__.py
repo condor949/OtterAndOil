@@ -3,6 +3,7 @@ from .SwarmController import *
 from .IntensityBasedController import *
 from .IntensityAndLinearVelocityController import *
 from .IntensityAndLinearVelocityPIDController import *
+from .plotter import ControllerPlotter, PlotRenderOptions, TrackRenderOptions
 
 controller_instance = {}
 

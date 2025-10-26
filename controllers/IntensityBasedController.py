@@ -1,30 +1,8 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from math import pi
-from tqdm import tqdm
-from matplotlib import rc, rcParams, rcParamsDefault
-rcParams.update(rcParamsDefault)
+from typing import Dict
 from spaces import BaseSpace
-from functools import partial
-from tools.dataStorage import *
-from numpy.ma.core import cumsum
+
 from .BaseController import BaseController
-from tools.random_generators import normalize
-from tools.random_generators import color_generator
-
-legendSize = 16
-legendSize1 = 10
-figSize1 = [25, 25]  # figure1 size in cm
-bigFigSize1 = [50, 26]  # larger figure1 size in cm
-figSize2 = [25, 13]  # figure2 size in cm
-dpiValue = 150  # figure dpi value
-
-def R2D(value):  # radians to degrees
-    return value * 180 / pi
-
-def cm2inch(value):  # inch to cm
-    return value / 2.54
 
 
 class IntensityBasedController(BaseController):
@@ -36,8 +14,6 @@ class IntensityBasedController(BaseController):
                  e_max_cap: float,
                  dynamic_error_max: bool,
                  smoothing: float,
-                 plot_config_path: str,
-                 use_latex: bool = True,
                  FPS=30,
                  isolines=10,
                  mu=1):
@@ -48,9 +24,7 @@ class IntensityBasedController(BaseController):
                          eps=eps,
                          e_max_cap=e_max_cap,
                          dynamic_error_max=dynamic_error_max,
-                         smoothing=smoothing,
-                         plot_config_path=plot_config_path,
-                         use_latex=use_latex)
+                         smoothing=smoothing)
         self.m_f_prev = [space.get_intensity(vehicle.starting_point[1], vehicle.starting_point[0]) for vehicle in vehicles]
         self.mu = mu
         self.FPS = FPS
@@ -67,7 +41,6 @@ class IntensityBasedController(BaseController):
         self.n_rots = []
         self.n_forwards = []
         self.nus = []
-        rcParams["text.usetex"] = self.use_latex
 
     def __str__(self):
         return (f'---controller--------------------------------------------------------------------------\n'
@@ -113,126 +86,18 @@ class IntensityBasedController(BaseController):
         self.m_f_prev = m_f_current
         return controls
 
-    def plotting_track(self, swarmData=None,
-                           big_picture: bool = False,
-                           not_animated: bool = False,
-                           store_plot: bool = False,
-                           **arguments):
-        # Attaching 3D axis to the figure
-        if big_picture:
-            fig = plt.figure(figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
-                             dpi=dpiValue)
-        else:
-            fig = plt.figure(figsize=(cm2inch(figSize1[0]), cm2inch(figSize1[1])),
-                             dpi=dpiValue)
+    def track_snapshot(self) -> Dict[str, object]:
+        if self.space is None:
+            raise ValueError("Controller must be associated with a space before plotting tracks")
 
-        rc('font', size=30)
-        contour = plt.contour(self.space.get_X(), self.space.get_Y(), self.space.get_Z(), levels=self.isolines,
-                              cmap='viridis')  # Adjust `levels` to set number of isolines
-
-        plt.clabel(contour, inline=True)  # Add labels to the isolines
-        plt.xlabel('X, m / East')
-        plt.ylabel('Y, m / North')
-        # plt.colorbar(contour, label='Intensity')  # Add a color bar for reference
-        plt.contour(self.space.get_X(), self.space.get_Y(), self.space.get_Z(), levels=[self.space.target_isoline],
-                    colors='red')  # Intersection line
-
-        plotData = {}
-        quivers = []
-
-        def anim_function(num, plotData, quivers):
-            for i, (line, dataSet) in enumerate(plotData.items()):
-                line.set_data(dataSet[0:2, :num])
-
-                # обновляем положение лодки (стрелочки)
-                if num < dataSet.shape[1] - 1:
-                    dx = dataSet[0, num + 1] - dataSet[0, num]
-                    dy = dataSet[1, num + 1] - dataSet[1, num]
-                else:  # если последняя точка, берем предыдущий шаг
-                    dx = dataSet[0, num] - dataSet[0, num - 1]
-                    dy = dataSet[1, num] - dataSet[1, num - 1]
-
-                norm = np.hypot(dx, dy)
-                if norm < 1e-6:
-                    dx, dy = 1.0, 0.0  # или dx, dy = 0, 0 чтобы не было стрелки вообще
-                else:
-                    dx, dy = dx / norm, dy / norm  # нормализуем
-                    arrow_length = 2.0  # выберите подходящее значение
-                    dx *= arrow_length
-                    dy *= arrow_length
-
-                quivers[i].set_offsets([dataSet[0, num], dataSet[1, num]])
-                quivers[i].set_UVC(dx, dy)
-
-            return list(plotData.keys()) + quivers
-
-        color_gen = color_generator()
-        i = 0
-        for simData in swarmData:
-            # State vectors
-            x = simData[:, 0]
-            y = simData[:, 1]
-            z = simData[:, 2]
-
-            N = y[::len(x) // self.space.grid_size]
-            E = x[::len(x) // self.space.grid_size]
-            D = z[::len(x) // self.space.grid_size]
-
-            dataSet = np.array([N, E, -D])  # Down is negative z
-
-            color = next(color_gen)
-            start_x = dataSet[0][0]
-            start_y = dataSet[1][0]
-            initial_dx = dataSet[0][1] - dataSet[0][0]
-            initial_dy = dataSet[1][1] - dataSet[1][0]
-            plt.plot(start_x, start_y, marker='*', markersize=10, color=color, label='_nolegend_',
-                     zorder=10)
-
-            # plt.text(start_x, start_y, f'({start_x:.1f}, {start_y:.1f})',
-            #          fontsize=12, color=color, verticalalignment='bottom', horizontalalignment='right')
-            quiv = plt.quiver(
-                start_x, start_y, initial_dx, initial_dy,
-                angles='xy',
-                scale_units='xy',
-                scale=1,
-                color=color,
-                width=0.02, zorder=15, label='_nolegend_'
-            )
-            quivers.append(quiv)
-
-            line = plt.plot(dataSet[0], dataSet[1], lw=2, c=color, zorder=10, label=f'agent {i + 1}')[0]
-            plotData[line] = dataSet
-            i += 1
-
-        plt.legend()
-
-        if store_plot:
-            plt.tight_layout()
-            plt.savefig(self.data_storage.get_path('track', "png"))
-        else:
-            plt.tight_layout()
-            not_animated = True
-            plt.title('Track in the intensity field')
-            plt.show()
-
-        if not not_animated:
-            # Create the animation object
-            ani = animation.FuncAnimation(fig,
-                                          partial(anim_function, plotData=plotData, quivers=quivers),
-                                          frames=self.space.grid_size,
-                                          interval=200,
-                                          blit=False,
-                                          repeat=True)
-
-            update_func = lambda _i, _n: progress_bar.update(1)
-            with tqdm(total=getattr(ani, "_save_count"), desc="Animation Writing") as progress_bar:
-                try:
-                    writer = animation.FFMpegWriter(fps=self.FPS)
-                except:
-                    writer = animation.PillowWriter(fps=self.FPS)
-
-                ani.save(self.data_storage.get_path('track', "gif"),
-                         writer=writer,
-                         progress_callback=update_func)
-
-        plt.close()
+        colors = [self.colors[i] for i in range(self.number_of_vehicles)] if self.colors else None
+        return {
+            "grid_x": self.space.get_X(),
+            "grid_y": self.space.get_Y(),
+            "grid_z": self.space.get_Z(),
+            "grid_size": self.space.grid_size,
+            "target_isoline": self.space.target_isoline,
+            "isolines": self.isolines,
+            "fps": self.FPS,
+            "colors": colors,
+        }

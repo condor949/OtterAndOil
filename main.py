@@ -5,9 +5,13 @@ main.py: Main program for the Otter and Oil, which can be used
     to simulate and test guidance, navigation and control (GNC) systems.
 """
 import argparse
+
+import numpy as np
+
 import spaces as sp
 import vehicles as vs
 from controllers.manager import ControllerManager
+from controllers.plotter import ControllerPlotter, PlotRenderOptions, TrackRenderOptions
 
 from lib import *
 from tools import *
@@ -119,27 +123,30 @@ if __name__ == '__main__':
             #
 
 
+        controllers_only = [controller for controller, _ in controller_runs]
+        plotter = ControllerPlotter(controllers_only,
+                                    plot_config_path=arguments.plot_config,
+                                    use_latex=getattr(arguments, 'use_latex', True),
+                                    plot_options=PlotRenderOptions(big_picture=arguments.big_picture,
+                                                                   separate_plots=getattr(arguments, 'separating_plots', False),
+                                                                   store_plots=arguments.store_plot,
+                                                                   for_publication=arguments.for_publication),
+                                    track_options=TrackRenderOptions(big_picture=arguments.big_picture,
+                                                                     not_animated=arguments.not_animated,
+                                                                     store_plot=arguments.store_plot),
+                                    data_storage=data_storage)
+
         for controller, sim_data in controller_runs:
-            controller.plotting_intensity(x=controller.simTime,
-                                          y=controller.intensity,
-                                          store_plot=arguments.store_plot,
-                                          for_publication=arguments.for_publication,
-                                          colors=controller.colors)
-            controller.plotting_error(x=controller.simTime,
-                                      y=controller.errors_norm,
-                                      store_plot=arguments.store_plot,
-                                      for_publication=arguments.for_publication,
-                                      colors=controller.colors)
-            cumulative_mean = np.cumsum(controller.errors_norm, axis=1) / (np.arange(len(controller.errors_norm[0])) + 1)
-            controller.plotting_error_avg(x=controller.simTime,
-                                          y=cumulative_mean,
-                                          store_plot=arguments.store_plot,
-                                          for_publication=arguments.for_publication,
-                                          colors=controller.colors)
-            controller.plotting_track(sim_data,
-                                      arguments.big_picture,
-                                      arguments.not_animated,
-                                      arguments.store_plot)
+            controller.errors_avg = np.cumsum(controller.errors_norm, axis=1) / (
+                np.arange(controller.errors_norm.shape[1]) + 1
+            )
+            plotter.plotting_track(controller,
+                                   sim_data)
+
+        plotter.plotting_intensity()
+        plotter.plotting_error()
+        plotter.plotting_error_avg()
+        plotter.plotting_error_avg(combine=True)
 
         arguments.set_data_storage(data_storage)
         arguments.store_in_config()
