@@ -5,6 +5,9 @@ main.py: Main program for the Otter and Oil, which can be used
     to simulate and test guidance, navigation and control (GNC) systems.
 """
 import argparse
+import logging
+import os
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor, as_completed
 
 import numpy as np
 
@@ -12,9 +15,21 @@ import spaces as sp
 import vehicles as vs
 from controllers.manager import ControllerManager
 from controllers.plotter import ControllerPlotter, PlotRenderOptions, TrackRenderOptions
+from controllers.plot_jobs import TrackJob, run_track_render
 
 from lib import *
 from tools import *
+
+WORK_THRESHOLD = 3000
+
+
+def _controller_label(idx, controller):
+    name = getattr(controller, "name", "")
+    abbreviation = getattr(controller, "abbreviation", "")
+    base = name or abbreviation
+    if base:
+        return f"{base}#{idx + 1}"
+    return f"controller #{idx + 1}"
 
 #("░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░\n"
 # "░░░░░░░░░░░░░░░░░▒▓▒▒░░▒▓▒░░░░░░░░░░░░░░░░░░░░░░░\n"
@@ -53,6 +68,9 @@ if __name__ == '__main__':
     # do not store in config file
     main_param.add_argument('-c', '--config-file', dest='config_filename', default='', help='')
     args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    logger = logging.getLogger("otter.main")
 
     arguments = read_and_assign_arguments(args.config_filename)
     controller_vehicle_pairs = ControllerVehiclePairs(arguments.controller_vehicle_pairs)
@@ -98,6 +116,7 @@ if __name__ == '__main__':
     print(space)
 
     for i in range(arguments.cycles):
+        logger.info("Starting cycle %d/%d", i + 1, arguments.cycles)
         data_storage = DataStorage(space.type, i, arguments.cache_dir)
 
         space.set_data_storage(data_storage)
@@ -106,13 +125,56 @@ if __name__ == '__main__':
 
         controller_runs = controller_manager.initialize_controllers(space=space,
                                                                     data_storage=data_storage)
-        swarm_data = []
+        controllers_only = [controller for controller, _ in controller_runs]
+        controller_labels = {idx: _controller_label(idx, controller) for idx, controller in enumerate(controllers_only)}
 
-        for i, (controller, _) in enumerate(controller_runs):
+        max_N = max((getattr(controller, "N", 0) for controller in controllers_only), default=0)
+        total_controllers = len(controllers_only)
+        multi = total_controllers > 1
+        use_threads_for_sim = multi and (max_N >= WORK_THRESHOLD)
+
+        if total_controllers:
+            if use_threads_for_sim:
+                logger.info("Starting threaded simulation for %d controllers (max N=%d)", total_controllers, max_N)
+            else:
+                logger.info("Starting sequential simulation for %d controllers (max N=%d)", total_controllers, max_N)
+
+        def _simulate_one(idx, controller):
             result = simultaneous_simulate(controller=controller)
-            controller_runs[i] = (controller, result)
-            controller_manager.set_run_result(i, result)
-            swarm_data.append(result)
+            return idx, result
+
+        results_map = {}
+
+        if use_threads_for_sim:
+            thr_workers = min(len(controllers_only), max(1, os.cpu_count() or 1))
+            logger.info("Using %d worker threads for simulation", thr_workers)
+            with ThreadPoolExecutor(max_workers=thr_workers) as pool:
+                futures = {}
+                for idx, controller in enumerate(controllers_only):
+                    label = controller_labels.get(idx, f"controller #{idx + 1}")
+                    logger.info("Dispatching simulation for %s", label)
+                    futures[pool.submit(_simulate_one, idx, controller)] = idx
+                logger.info("Waiting for %d simulation task(s) to complete...", len(futures))
+                for future in as_completed(futures):
+                    idx, sim_result = future.result()
+                    results_map[idx] = sim_result
+                    label = controller_labels.get(idx, f"controller #{idx + 1}")
+                    logger.info("Simulation finished for %s (%d/%d)", label, idx + 1, total_controllers)
+        else:
+            for idx, controller in enumerate(controllers_only):
+                label = controller_labels.get(idx, f"controller #{idx + 1}")
+                logger.info("Simulating %s (%d/%d)...", label, idx + 1, total_controllers)
+                idx, sim_result = _simulate_one(idx, controller)
+                results_map[idx] = sim_result
+                logger.info("Simulation finished for %s", label)
+
+        if total_controllers:
+            logger.info("Simulation phase completed")
+
+        for idx in range(len(controller_runs)):
+            controller_manager.set_run_result(idx, results_map[idx])
+
+        controller_runs = list(controller_manager.controller_runs)
 
             # for attribute_name, filename in (("nus", "nus"),
             #                                  ("dss", "dss"),
@@ -124,6 +186,7 @@ if __name__ == '__main__':
 
 
         controllers_only = [controller for controller, _ in controller_runs]
+        controller_labels = {idx: _controller_label(idx, controller) for idx, controller in enumerate(controllers_only)}
         plotter = ControllerPlotter(controllers_only,
                                     plot_config_path=arguments.plot_config,
                                     use_latex=getattr(arguments, 'use_latex', True),
@@ -136,17 +199,63 @@ if __name__ == '__main__':
                                                                      store_plot=arguments.store_plot),
                                     data_storage=data_storage)
 
-        for controller, sim_data in controller_runs:
+        for controller, _ in controller_runs:
             controller.errors_avg = np.cumsum(controller.errors_norm, axis=1) / (
                 np.arange(controller.errors_norm.shape[1]) + 1
             )
-            plotter.plotting_track(controller,
-                                   sim_data)
 
+        animate_enabled = not arguments.not_animated
+        do_animation = arguments.store_plot and animate_enabled
+
+        if do_animation:
+            logger.info("Track animation rendering enabled; preparing jobs")
+            jobs = []
+            for idx, (controller, sim_data) in enumerate(controller_runs):
+                label = controller_labels.get(idx, f"controller #{idx + 1}")
+                logger.info("Queueing track render for %s", label)
+                jobs.append(TrackJob(
+                    snapshot=controller.track_snapshot(),
+                    sim_data=sim_data,
+                    out_png=controller.get_plot_path('track', 'png'),
+                    out_gif=controller.get_plot_path('track', 'gif'),
+                    dpi=plotter._dpi,
+                    big_picture=plotter._track_options.big_picture,
+                    use_latex=getattr(arguments, 'use_latex', True),
+                    animate=animate_enabled,
+                    title="Track in the intensity field",
+                    label=label,
+                ))
+
+            if jobs:
+                proc_workers = min(len(jobs), max(1, os.cpu_count() or 1))
+                logger.info("Spawning %d process(es) for %d track job(s)", proc_workers, len(jobs))
+                with ProcessPoolExecutor(max_workers=proc_workers) as pool:
+                    futures = {pool.submit(run_track_render, job): job.label or controller_labels.get(i, f"controller #{i + 1}")
+                               for i, job in enumerate(jobs)}
+                    logger.info("Waiting for track rendering jobs to complete...")
+                    for future in as_completed(futures):
+                        label = futures[future]
+                        future.result()
+                        logger.info("Track rendering completed for %s", label)
+                logger.info("All track rendering jobs finished")
+            else:
+                logger.info("No track rendering jobs were created")
+        else:
+            logger.info("Track animation disabled or not storing; rendering sequentially in main process")
+            for idx, (controller, sim_data) in enumerate(controller_runs):
+                label = controller_labels.get(idx, f"controller #{idx + 1}")
+                logger.info("Rendering track for %s in main process", label)
+                plotter.plotting_track(controller,
+                                       sim_data)
+                logger.info("Track rendering finished for %s", label)
+            logger.info("Track rendering in main process finished")
+
+        logger.info("Rendering intensity and error plots")
         plotter.plotting_intensity()
         plotter.plotting_error()
         plotter.plotting_error_avg()
         plotter.plotting_error_avg(combine=True)
+        logger.info("Finished rendering intensity and error plots")
 
         arguments.set_data_storage(data_storage)
         arguments.store_in_config()
@@ -156,4 +265,7 @@ if __name__ == '__main__':
                 print(f'controller {controller_index + 1} vehicle {vehicle_index}: e_norm = {error_sum / controller.sim_time}')
             print(controller.e_max)
 
+        logger.info("Cycle %d/%d completed", i + 1, arguments.cycles)
+
+    logger.info("All cycles completed")
     print('Done!')
