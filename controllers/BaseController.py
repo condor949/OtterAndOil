@@ -1,10 +1,11 @@
 from abc import ABC
 from collections.abc import Sequence
-from typing import Dict
+from typing import Dict, List, Optional
 
 import numpy as np
 
 from spaces import BaseSpace
+from tqdm import tqdm
 
 class BaseController(ABC):
     name = 'base_controller'
@@ -28,6 +29,7 @@ class BaseController(ABC):
         self.vehicles = vehicles
         self.colors = {i: vehicle.color for i, vehicle in enumerate(vehicles)}
         self.data_storage = None
+        self.sim_data: Optional[List[np.ndarray]] = None
         self.sum_error_values = np.zeros(self.number_of_vehicles, dtype=float)
         self.eps = eps
         self.e_max = self.eps
@@ -88,3 +90,39 @@ class BaseController(ABC):
     def track_snapshot(self) -> Dict[str, object]:
         """Return metadata required to render track plots for the controller."""
         raise NotImplementedError("Controller must implement track_snapshot to support track plotting")
+
+    def simultaneous_simulate(self) -> List[np.ndarray]:
+        DOF = 6  # degrees of freedom
+
+        m_nu = []
+        m_u_actual = []
+        m_eta = []
+
+        for vehicle in self.vehicles:
+            m_eta.append(np.array([vehicle.starting_point[1], vehicle.starting_point[0], 0, 0, 0, 0], float))
+            m_nu.append(vehicle.nu)
+            m_u_actual.append(vehicle.u_actual)
+
+        sim_data = [np.empty([self.N, 2 * DOF + 2 * vehicle.dimU], float) for vehicle in self.vehicles]
+
+        for step in tqdm(range(0, self.N), desc=f"Vehicle Simulation x{self.number_of_vehicles}"):
+            m_u_control = self.generate_control(m_eta, step, m_nu)
+
+            for internal_number, vehicle in enumerate(self.vehicles):
+                eta = m_eta[internal_number]
+                nu = m_nu[internal_number]
+                u_actual = m_u_actual[internal_number]
+                u_control = m_u_control[internal_number]
+
+                signals = np.hstack((eta, nu, u_control, u_actual))
+                sim_data[internal_number][step, :] = signals
+
+                nu, u_actual = vehicle.dynamics(eta, nu, u_actual, u_control, self.sample_time)
+                eta = vehicle.repositioning(eta, nu, self.sample_time)
+
+                m_eta[internal_number] = eta
+                m_nu[internal_number] = nu
+                m_u_actual[internal_number] = u_actual
+
+        self.sim_data = sim_data
+        return sim_data

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Sequence, Optional, Dict, Any
+import shutil
 import numpy as np
 
 def _cm2inch(v: float) -> float: return v / 2.54
@@ -25,7 +26,14 @@ def run_track_render(job: TrackJob) -> None:
     if job.label:
         print(f"[TrackRender] Starting '{job.label}'", flush=True)
     rcParams.update(rcParamsDefault)
-    plt.rc('text', usetex=job.use_latex); rc('font', size=30)
+    use_latex = bool(job.use_latex)
+    if use_latex and shutil.which('latex') is None:
+        use_latex = False
+        if job.label:
+            print(f"[TrackRender] '{job.label}' falling back to non-LaTeX labels: 'latex' executable not found", flush=True)
+        else:
+            print("[TrackRender] Falling back to non-LaTeX labels: 'latex' executable not found", flush=True)
+    plt.rc('text', usetex=use_latex); rc('font', size=30)
 
     # required keys: grid_x, grid_y, grid_z, target_isoline, isolines, fps, grid_size
     snap = job.snapshot
@@ -54,20 +62,38 @@ def run_track_render(job: TrackJob) -> None:
         plotData.append((line, data))
     ax.legend(); fig.tight_layout(); fig.savefig(job.out_png)
 
+    has_ffmpeg = shutil.which('ffmpeg') is not None
+
     if job.animate and job.out_gif:
-        def anim_fn(k: int):
-            artists = []
-            for (line, data), q in zip(plotData, quivers):
-                idx = min(max(k, 0), data.shape[1]-1); line.set_data(data[0:2, :idx+1])
-                if idx < data.shape[1]-1: dx = data[0, idx+1] - data[0, idx]; dy = data[1, idx+1] - data[1, idx]
-                else: p = max(idx-1, 0); dx = data[0, idx] - data[0, p]; dy = data[1, idx] - data[1, p]
-                n = np.hypot(dx, dy) or 1.0; L = 2.0; q.set_offsets([data[0, idx], data[1, idx]]); q.set_UVC(L*dx/n, L*dy/n)
-                artists.extend([line, q])
-            return artists
-        ani = animation.FuncAnimation(fig, anim_fn, frames=grid_size, interval=200, blit=False, repeat=True)
-        try: writer = animation.FFMpegWriter(fps=fps)
-        except Exception: writer = animation.PillowWriter(fps=fps)
-        ani.save(job.out_gif, writer=writer)
+        if not has_ffmpeg:
+            reason = "'ffmpeg' executable not found"
+            if job.label:
+                print(f"[TrackRender] '{job.label}' skipping animation: {reason}", flush=True)
+            else:
+                print(f"[TrackRender] Skipping animation: {reason}", flush=True)
+        else:
+            def anim_fn(k: int):
+                artists = []
+                for (line, data), q in zip(plotData, quivers):
+                    idx = min(max(k, 0), data.shape[1]-1); line.set_data(data[0:2, :idx+1])
+                    if idx < data.shape[1]-1: dx = data[0, idx+1] - data[0, idx]; dy = data[1, idx+1] - data[1, idx]
+                    else: p = max(idx-1, 0); dx = data[0, idx] - data[0, p]; dy = data[1, idx] - data[1, p]
+                    n = np.hypot(dx, dy) or 1.0; L = 2.0; q.set_offsets([data[0, idx], data[1, idx]]); q.set_UVC(L*dx/n, L*dy/n)
+                    artists.extend([line, q])
+                return artists
+            ani = animation.FuncAnimation(fig, anim_fn, frames=grid_size, interval=200, blit=False, repeat=True)
+            writer = None
+            try:
+                writer = animation.FFMpegWriter(fps=fps)
+            except Exception:
+                writer = None
+            if writer is None:
+                if job.label:
+                    print(f"[TrackRender] '{job.label}' falling back to PillowWriter: FFMpegWriter unavailable", flush=True)
+                else:
+                    print("[TrackRender] Falling back to PillowWriter: FFMpegWriter unavailable", flush=True)
+                writer = animation.PillowWriter(fps=fps)
+            ani.save(job.out_gif, writer=writer)
     plt.close(fig)
     if job.label:
         print(f"[TrackRender] Finished '{job.label}'", flush=True)

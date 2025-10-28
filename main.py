@@ -140,10 +140,8 @@ if __name__ == '__main__':
                 logger.info("Starting sequential simulation for %d controllers (max N=%d)", total_controllers, max_N)
 
         def _simulate_one(idx, controller):
-            result = simultaneous_simulate(controller=controller)
-            return idx, result
-
-        results_map = {}
+            controller.simultaneous_simulate()
+            return idx
 
         if use_threads_for_sim:
             thr_workers = min(len(controllers_only), max(1, os.cpu_count() or 1))
@@ -156,23 +154,20 @@ if __name__ == '__main__':
                     futures[pool.submit(_simulate_one, idx, controller)] = idx
                 logger.info("Waiting for %d simulation task(s) to complete...", len(futures))
                 for future in as_completed(futures):
-                    idx, sim_result = future.result()
-                    results_map[idx] = sim_result
+                    idx = future.result()
+                    controller_manager.set_run_result(idx)
                     label = controller_labels.get(idx, f"controller #{idx + 1}")
                     logger.info("Simulation finished for %s (%d/%d)", label, idx + 1, total_controllers)
         else:
             for idx, controller in enumerate(controllers_only):
                 label = controller_labels.get(idx, f"controller #{idx + 1}")
                 logger.info("Simulating %s (%d/%d)...", label, idx + 1, total_controllers)
-                idx, sim_result = _simulate_one(idx, controller)
-                results_map[idx] = sim_result
+                idx = _simulate_one(idx, controller)
+                controller_manager.set_run_result(idx)
                 logger.info("Simulation finished for %s", label)
 
         if total_controllers:
             logger.info("Simulation phase completed")
-
-        for idx in range(len(controller_runs)):
-            controller_manager.set_run_result(idx, results_map[idx])
 
         controller_runs = list(controller_manager.controller_runs)
 

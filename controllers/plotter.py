@@ -1,4 +1,6 @@
 import json
+import logging
+import shutil
 from collections.abc import Iterable as IterableCollection
 from dataclasses import dataclass
 from functools import partial
@@ -14,6 +16,8 @@ from tools.dataStorage import DataStorage
 from tools.random_generators import color_generator
 
 from .BaseController import BaseController
+
+logger = logging.getLogger(__name__)
 
 rcParams.update(rcParamsDefault)
 
@@ -64,7 +68,10 @@ class ControllerPlotter:
                  data_storage: Optional[DataStorage] = None) -> None:
         self._controllers: List[BaseController] = list(controllers)
         self._plot_config_path = plot_config_path
-        self._use_latex = use_latex
+        self._use_latex = bool(use_latex)
+        if self._use_latex and shutil.which('latex') is None:
+            self._use_latex = False
+            logger.warning("LaTeX executable not found; falling back to Matplotlib text rendering without TeX.")
         self._dpi = dpi
         self._plot_options = plot_options or PlotRenderOptions()
         self._track_options = track_options or TrackRenderOptions()
@@ -91,6 +98,10 @@ class ControllerPlotter:
                        swarmData=None) -> None:
         store_plot = self._track_options.store_plot
         animate = store_plot and not self._track_options.not_animated
+        has_ffmpeg = shutil.which('ffmpeg') is not None
+        if animate and not has_ffmpeg:
+            animate = False
+            logger.warning("Skipping track animation for %s: 'ffmpeg' executable not found", getattr(controller, 'name', 'controller'))
         if swarmData is None:
             raise ValueError("Simulation data must be provided for track plotting")
 

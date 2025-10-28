@@ -69,8 +69,10 @@ class ControllerManager:
 
         return self.controller_runs
 
-    def set_run_result(self, index: int, result) -> None:
+    def set_run_result(self, index: int, result=None) -> None:
         controller, _ = self.controller_runs[index]
+        if result is None:
+            result = getattr(controller, "sim_data", None)
         self.controller_runs[index] = (controller, result)
 
     def aggregate_metric(self, metric_name: str) -> AggregatedMetric:
