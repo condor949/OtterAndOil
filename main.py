@@ -237,11 +237,10 @@ if __name__ == '__main__':
                 logger.info("No track rendering jobs were created")
         else:
             logger.info("Track animation disabled or not storing; rendering sequentially in main process")
-            for idx, (controller, sim_data) in enumerate(controller_runs):
+            for idx, (controller, _sim_data) in enumerate(controller_runs):
                 label = controller_labels.get(idx, f"controller #{idx + 1}")
                 logger.info("Rendering track for %s in main process", label)
-                plotter.plotting_track(controller,
-                                       sim_data)
+                plotter.plotting_track(controllers=[controller])
                 logger.info("Track rendering finished for %s", label)
             logger.info("Track rendering in main process finished")
 
@@ -250,6 +249,7 @@ if __name__ == '__main__':
         plotter.plotting_error()
         plotter.plotting_error_avg()
         plotter.plotting_error_avg(combine=True)
+        plotter.plotting_track(combine=True)
         logger.info("Finished rendering intensity and error plots")
 
         arguments.set_data_storage(data_storage)

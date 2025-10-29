@@ -4,7 +4,7 @@ import shutil
 from collections.abc import Iterable as IterableCollection
 from dataclasses import dataclass
 from functools import partial
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -94,45 +94,62 @@ class ControllerPlotter:
         self._controllers = list(controllers)
 
     def plotting_track(self,
-                       controller: BaseController,
-                       swarmData=None) -> None:
+                       *,
+                       controllers: Optional[Sequence[BaseController]] = None,
+                       combine: bool = False) -> None:
+        target_controllers = list(controllers) if controllers is not None else self._controllers
+        if not target_controllers:
+            raise ValueError("No controllers are available for track plotting")
+
+        entries: List[Tuple[BaseController, IterableCollection, Dict[str, Any]]] = []
+        for controller in target_controllers:
+            sim_data = getattr(controller, "sim_data", None)
+            if sim_data is None:
+                raise ValueError(
+                    f"Controller '{controller.name}' has no simulation data. Run the simulation before plotting tracks."
+                )
+            if not isinstance(sim_data, IterableCollection):
+                raise TypeError("Controller simulation data must be an iterable of arrays for track plotting")
+            metadata = self._extract_track_metadata(controller)
+            entries.append((controller, sim_data, metadata))
+
+        if combine:
+            self._render_tracks(entries, combined=True)
+        else:
+            for entry in entries:
+                self._render_tracks([entry], combined=False)
+
+    def _render_tracks(self,
+                       entries: Sequence[Tuple[BaseController, IterableCollection, Dict[str, Any]]],
+                       *,
+                       combined: bool) -> None:
+        if not entries:
+            return
+
+        controllers = [controller for controller, _sim, _meta in entries]
+        reference_metadata = entries[0][2]
+        if combined:
+            for controller, _sim, candidate_metadata in entries[1:]:
+                self._ensure_compatible_track_metadata(reference_metadata, candidate_metadata, controller)
+
         store_plot = self._track_options.store_plot
         animate = store_plot and not self._track_options.not_animated
         has_ffmpeg = shutil.which('ffmpeg') is not None
         if animate and not has_ffmpeg:
             animate = False
-            logger.warning("Skipping track animation for %s: 'ffmpeg' executable not found", getattr(controller, 'name', 'controller'))
-        if swarmData is None:
-            raise ValueError("Simulation data must be provided for track plotting")
+            if combined:
+                logger.warning("Skipping combined track animation: 'ffmpeg' executable not found")
+            else:
+                logger.warning("Skipping track animation for %s: 'ffmpeg' executable not found",
+                               getattr(controllers[0], 'name', 'controller'))
 
-        track_snapshot = controller.track_snapshot()
-        if not isinstance(track_snapshot, dict):
-            raise TypeError("track_snapshot must return a mapping with track metadata")
-
-        required_keys = [
-            "grid_x",
-            "grid_y",
-            "grid_z",
-            "grid_size",
-            "target_isoline",
-            "isolines",
-            "fps",
-        ]
-        missing_keys = [key for key in required_keys if key not in track_snapshot]
-        if missing_keys:
-            raise KeyError(
-                "track_snapshot is missing required keys: " + ", ".join(missing_keys)
-            )
-
-        grid_x = np.asarray(track_snapshot["grid_x"])
-        grid_y = np.asarray(track_snapshot["grid_y"])
-        grid_z = np.asarray(track_snapshot["grid_z"])
-        grid_size = int(track_snapshot["grid_size"])
-        target_isoline = track_snapshot["target_isoline"]
-        isolines = track_snapshot["isolines"]
-        fps = int(track_snapshot["fps"])
-        colors_metadata = track_snapshot.get("colors")
-        provided_colors = list(colors_metadata) if colors_metadata is not None else []
+        grid_x = reference_metadata["grid_x"]
+        grid_y = reference_metadata["grid_y"]
+        grid_z = reference_metadata["grid_z"]
+        grid_size = reference_metadata["grid_size"]
+        target_isoline = reference_metadata["target_isoline"]
+        isolines = reference_metadata["isolines"]
+        fps = reference_metadata["fps"]
 
         if self._track_options.big_picture:
             fig = plt.figure(figsize=(cm2inch(bigFigSize1[0]), cm2inch(bigFigSize1[1])),
@@ -169,8 +186,9 @@ class ControllerPlotter:
                     dx = dataSet[0, num + 1] - dataSet[0, num]
                     dy = dataSet[1, num + 1] - dataSet[1, num]
                 else:
-                    dx = dataSet[0, num] - dataSet[0, num - 1]
-                    dy = dataSet[1, num] - dataSet[1, num - 1]
+                    prev_index = max(num - 1, 0)
+                    dx = dataSet[0, num] - dataSet[0, prev_index]
+                    dy = dataSet[1, num] - dataSet[1, prev_index]
 
                 norm = np.hypot(dx, dy)
                 if norm < 1e-6:
@@ -187,50 +205,63 @@ class ControllerPlotter:
             return list(plotData.keys()) + quivers
 
         color_gen = color_generator()
-        for i, simData in enumerate(swarmData):
-            x = simData[:, 0]
-            y = simData[:, 1]
-            z = simData[:, 2]
+        for controller, sim_data, metadata in entries:
+            provided_colors = metadata["provided_colors"]
+            for i, vehicle_data in enumerate(sim_data):
+                data_array = np.asarray(vehicle_data)
+                if data_array.ndim != 2 or data_array.shape[1] < 3:
+                    raise ValueError("Simulation data must be a 2D array with at least three columns (x, y, z)")
 
-            if grid_size <= 0:
-                raise ValueError("Track snapshot must define a positive grid size")
+                x = data_array[:, 0]
+                y = data_array[:, 1]
+                z = data_array[:, 2]
 
-            step = max(len(x) // grid_size, 1)
-            N = y[::step]
-            E = x[::step]
-            D = z[::step]
+                step = max(len(x) // grid_size, 1)
+                N = y[::step]
+                E = x[::step]
+                D = z[::step]
 
-            dataSet = np.array([N, E, -D])
+                dataSet = np.array([N, E, -D])
 
-            if i < len(provided_colors):
-                color = provided_colors[i]
-            else:
-                color = next(color_gen)
-            start_x = dataSet[0][0]
-            start_y = dataSet[1][0]
-            initial_dx = dataSet[0][1] - dataSet[0][0]
-            initial_dy = dataSet[1][1] - dataSet[1][0]
-            plt.plot(start_x, start_y, marker='*', markersize=10, color=color, label='_nolegend_',
-                     zorder=10)
+                if i < len(provided_colors):
+                    color = provided_colors[i]
+                else:
+                    color = next(color_gen)
+                start_x = dataSet[0][0]
+                start_y = dataSet[1][0]
+                initial_dx = dataSet[0][1] - dataSet[0][0]
+                initial_dy = dataSet[1][1] - dataSet[1][0]
+                plt.plot(start_x, start_y, marker='*', markersize=10, color=color, label='_nolegend_',
+                         zorder=10)
 
-            quiv = plt.quiver(
-                start_x, start_y, initial_dx, initial_dy,
-                angles='xy',
-                scale_units='xy',
-                scale=1,
-                color=color,
-                width=0.02, zorder=15, label='_nolegend_'
-            )
-            quivers.append(quiv)
+                quiv = plt.quiver(
+                    start_x, start_y, initial_dx, initial_dy,
+                    angles='xy',
+                    scale_units='xy',
+                    scale=1,
+                    color=color,
+                    width=0.02, zorder=15, label='_nolegend_'
+                )
+                quivers.append(quiv)
 
-            line = plt.plot(dataSet[0], dataSet[1], lw=2, c=color, zorder=10, label=f'agent {i + 1}')[0]
-            plotData[line] = dataSet
+                label_suffix = f'agent {i + 1}'
+                if combined:
+                    controller_label = getattr(controller, 'abbreviation', None) or controller.name
+                    label = f'{controller_label} {label_suffix}'
+                else:
+                    label = label_suffix
+                line = plt.plot(dataSet[0], dataSet[1], lw=2, c=color, zorder=10, label=label)[0]
+                plotData[line] = dataSet
 
         plt.legend()
 
         if store_plot:
             plt.tight_layout()
-            plt.savefig(controller.get_plot_path('track', "png"))
+            if combined:
+                output_path = self._resolve_combined_plot_path('track', controllers)
+            else:
+                output_path = controllers[0].get_plot_path('track', 'png')
+            plt.savefig(output_path)
         else:
             plt.tight_layout()
             plt.title('Track in the intensity field')
@@ -251,11 +282,126 @@ class ControllerPlotter:
                 except Exception:
                     writer = animation.PillowWriter(fps=fps)
 
-                ani.save(controller.get_plot_path('track', "gif"),
+                if combined:
+                    animation_path = self._resolve_combined_plot_path('track', controllers, extension='gif')
+                else:
+                    animation_path = controllers[0].get_plot_path('track', 'gif')
+                ani.save(animation_path,
                          writer=writer,
                          progress_callback=update_func)
 
-        plt.close()
+        plt.close(fig)
+
+    def _extract_track_metadata(self, controller: BaseController) -> Dict[str, Any]:
+        track_snapshot = controller.track_snapshot()
+        if not isinstance(track_snapshot, dict):
+            raise TypeError("track_snapshot must return a mapping with track metadata")
+
+        required_keys = [
+            "grid_x",
+            "grid_y",
+            "grid_z",
+            "grid_size",
+            "target_isoline",
+            "isolines",
+            "fps",
+        ]
+        missing_keys = [key for key in required_keys if key not in track_snapshot]
+        if missing_keys:
+            raise KeyError(
+                "track_snapshot is missing required keys: " + ", ".join(missing_keys)
+            )
+
+        grid_x = np.asarray(track_snapshot["grid_x"])
+        grid_y = np.asarray(track_snapshot["grid_y"])
+        grid_z = np.asarray(track_snapshot["grid_z"])
+        grid_size = int(track_snapshot["grid_size"])
+        target_isoline = track_snapshot["target_isoline"]
+        isoline_values = track_snapshot["isolines"]
+        if np.isscalar(isoline_values):
+            isolines = isoline_values
+        else:
+            isolines = np.asarray(isoline_values)
+            if isolines.ndim == 0:
+                isolines = isolines.reshape(1)
+            elif isolines.ndim > 1:
+                isolines = isolines.reshape(-1)
+        fps = int(track_snapshot["fps"])
+        colors_metadata = track_snapshot.get("colors")
+        provided_colors = list(colors_metadata) if colors_metadata is not None else []
+
+        if grid_size <= 0:
+            raise ValueError("Track snapshot must define a positive grid size")
+
+        return {
+            "grid_x": grid_x,
+            "grid_y": grid_y,
+            "grid_z": grid_z,
+            "grid_size": grid_size,
+            "target_isoline": target_isoline,
+            "isolines": isolines,
+            "fps": fps,
+            "provided_colors": provided_colors,
+        }
+
+    def _ensure_compatible_track_metadata(self,
+                                          reference: Dict[str, Any],
+                                          candidate: Dict[str, Any],
+                                          controller: BaseController) -> None:
+        controller_name = getattr(controller, 'name', 'controller')
+        if reference["grid_size"] != candidate["grid_size"]:
+            raise ValueError(
+                f"Controller '{controller_name}' has a different grid_size and cannot be combined"
+            )
+
+        if reference["fps"] != candidate["fps"]:
+            raise ValueError(
+                f"Controller '{controller_name}' has a different fps and cannot be combined"
+            )
+
+        if not np.allclose(reference["grid_x"], candidate["grid_x"]):
+            raise ValueError(
+                f"Controller '{controller_name}' has different grid_x values and cannot be combined"
+            )
+
+        if not np.allclose(reference["grid_y"], candidate["grid_y"]):
+            raise ValueError(
+                f"Controller '{controller_name}' has different grid_y values and cannot be combined"
+            )
+
+        if not np.allclose(reference["grid_z"], candidate["grid_z"]):
+            raise ValueError(
+                f"Controller '{controller_name}' has different grid_z values and cannot be combined"
+            )
+
+        reference_isolines = reference["isolines"]
+        candidate_isolines = candidate["isolines"]
+        if np.isscalar(reference_isolines) and np.isscalar(candidate_isolines):
+            if not np.isclose(reference_isolines, candidate_isolines):
+                raise ValueError(
+                    f"Controller '{controller_name}' has different isolines and cannot be combined"
+                )
+        elif np.isscalar(reference_isolines) != np.isscalar(candidate_isolines):
+            raise ValueError(
+                f"Controller '{controller_name}' mixes scalar and array isolines and cannot be combined"
+            )
+        else:
+            if not np.allclose(np.asarray(reference_isolines), np.asarray(candidate_isolines)):
+                raise ValueError(
+                    f"Controller '{controller_name}' has different isolines and cannot be combined"
+                )
+
+        reference_isoline = reference["target_isoline"]
+        candidate_isoline = candidate["target_isoline"]
+        if isinstance(reference_isoline, (int, float)) and isinstance(candidate_isoline, (int, float)):
+            if not np.isclose(reference_isoline, candidate_isoline):
+                raise ValueError(
+                    f"Controller '{controller_name}' has a different target_isoline and cannot be combined"
+                )
+        elif reference_isoline != candidate_isoline:
+            raise ValueError(
+                f"Controller '{controller_name}' has a different target_isoline and cannot be combined"
+            )
 
     def _create_plotting_method(self, name: str, config: dict):
         def plotting_method(*,
@@ -478,7 +624,8 @@ class ControllerPlotter:
 
     def _resolve_combined_plot_path(self,
                                      name: str,
-                                     controllers: Sequence[BaseController]) -> str:
+                                     controllers: Sequence[BaseController],
+                                     extension: str = 'png') -> str:
         if not controllers:
             raise ValueError("Cannot resolve combined plot path without controllers")
 
@@ -497,7 +644,7 @@ class ControllerPlotter:
                 self._subset_storage[key] = storage.create_child_storage(folder_name)
             target_storage = self._subset_storage[key]
 
-        return target_storage.get_path(name, 'png')
+        return target_storage.get_path(name, extension)
 
     @staticmethod
     def _build_subset_folder_name(controllers: Sequence[BaseController]) -> str:
