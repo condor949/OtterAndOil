@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 from collections.abc import Sequence
 from typing import Dict, List, Optional
@@ -6,6 +7,9 @@ import numpy as np
 
 from spaces import BaseSpace
 from tqdm import tqdm
+
+
+logger = logging.getLogger(__name__)
 
 class BaseController(ABC):
     name = 'base_controller'
@@ -46,9 +50,11 @@ class BaseController(ABC):
 
     def set_data_storage(self, data_storage) -> None:
         self.data_storage = data_storage
+        logger.debug("Data storage configured for controller '%s' -> %s", self.name, data_storage)
 
     def get_plot_path(self, plot_name: str, extension: str) -> str:
         if self.data_storage is None:
+            logger.error("Attempted to access plot path '%s.%s' before configuring data storage", plot_name, extension)
             raise RuntimeError("Data storage must be configured before generating plot paths")
         return self.data_storage.get_path(plot_name, extension)
 
@@ -83,6 +89,7 @@ class BaseController(ABC):
         snapshot: Dict[str, object] = {}
         for name in requested:
             if not hasattr(self, name):
+                logger.error("Snapshot requested unknown attribute '%s' on controller '%s'", name, self.name)
                 raise AttributeError(f"Controller '{self.name}' has no attribute '{name}' for plotting")
             snapshot[name] = getattr(self, name)
         return snapshot
@@ -97,6 +104,13 @@ class BaseController(ABC):
         m_nu = []
         m_u_actual = []
         m_eta = []
+
+        logger.info(
+            "Controller '%s' starting simultaneous simulation with %d vehicle(s) and %d steps",
+            self.name,
+            self.number_of_vehicles,
+            self.N,
+        )
 
         for vehicle in self.vehicles:
             m_eta.append(np.array([vehicle.starting_point[1], vehicle.starting_point[0], 0, 0, 0, 0], float))
@@ -125,4 +139,5 @@ class BaseController(ABC):
                 m_u_actual[internal_number] = u_actual
 
         self.sim_data = sim_data
+        logger.info("Controller '%s' completed simulation", self.name)
         return sim_data

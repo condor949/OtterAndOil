@@ -3,12 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
+import logging
+
 import numpy as np
 
 from tools.dataStorage import ControllerAssignment, DataStorage
 
 from .BaseController import BaseController
 from . import create_instance, get_controller_type
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -36,6 +41,11 @@ class ControllerManager:
         self._vehicle_serials: Dict[BaseController, List[int]] = {}
         self._data_storage: Optional[DataStorage] = None
 
+        logger.debug(
+            "ControllerManager initialized with %d controller/vehicle group(s)",
+            len(self._controller_vehicle_groups),
+        )
+
     @property
     def controllers(self) -> List[BaseController]:
         return list(self._controllers)
@@ -54,19 +64,31 @@ class ControllerManager:
         self._vehicle_serials.clear()
 
         self._data_storage = data_storage.create_child_storage("controllers")
+        logger.debug("Created controller root data storage at %s", self._data_storage.timestamped_folder)
 
         for assignment_index, (assignment, vehicles) in enumerate(self._controller_vehicle_groups, start=1):
             controller_mode = get_controller_type(assignment.controller_type)
             if controller_mode == "swarm":
+                logger.info(
+                    "Initializing swarm controller '%s' with %d vehicle(s)",
+                    assignment.controller_type,
+                    len(vehicles),
+                )
                 controller = self._instantiate_controller(assignment.controller_type, vehicles, space)
                 self._register_controller(controller, assignment_index, vehicles)
             elif controller_mode == "individual":
+                logger.info(
+                    "Initializing individual controller '%s' for %d vehicle(s)",
+                    assignment.controller_type,
+                    len(vehicles),
+                )
                 for vehicle in vehicles:
                     controller = self._instantiate_controller(assignment.controller_type, [vehicle], space)
                     self._register_controller(controller, assignment_index, [vehicle])
             else:
                 raise ValueError(f"Unsupported controller type: {controller_mode}")
 
+        logger.info("Initialized %d controller instance(s)", len(self._controllers))
         return self.controller_runs
 
     def set_run_result(self, index: int, result=None) -> None:
@@ -74,6 +96,7 @@ class ControllerManager:
         if result is None:
             result = getattr(controller, "sim_data", None)
         self.controller_runs[index] = (controller, result)
+        logger.debug("Stored run result for controller #%d (%s)", index + 1, controller.name)
 
     def aggregate_metric(self, metric_name: str) -> AggregatedMetric:
         attribute = metric_name
@@ -134,8 +157,14 @@ class ControllerManager:
         self.controller_runs.append((controller, None))
         self._vehicle_serials[controller] = [vehicle.serial_number for vehicle in vehicles]
 
-        print(controller)
-        print(f"Controller storage: {controller_storage.timestamped_folder}")
+        logger.info(
+            "Registered controller '%s' (%s) for assignment %d with %d vehicle(s); storage=%s",
+            controller.name,
+            controller.abbreviation,
+            assignment_index,
+            len(vehicles),
+            controller_storage.timestamped_folder,
+        )
 
     @staticmethod
     def _build_storage_name(controller: BaseController,

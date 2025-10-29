@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from typing import Sequence, Optional, Dict, Any
+import logging
 import shutil
 import numpy as np
+
+
+logger = logging.getLogger(__name__)
 
 def _cm2inch(v: float) -> float: return v / 2.54
 
@@ -19,20 +23,23 @@ class TrackJob:
     label: str = ""
 
 def run_track_render(job: TrackJob) -> None:
+    if not logging.getLogger().handlers:
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
     import matplotlib; matplotlib.use("Agg")             # set non-interactive backend INSIDE subprocess
     import matplotlib.pyplot as plt
     import matplotlib.animation as animation
     from matplotlib import rc, rcParams, rcParamsDefault
     if job.label:
-        print(f"[TrackRender] Starting '{job.label}'", flush=True)
+        logger.info("[TrackRender] Starting '%s'", job.label)
     rcParams.update(rcParamsDefault)
     use_latex = bool(job.use_latex)
     if use_latex and shutil.which('latex') is None:
         use_latex = False
         if job.label:
-            print(f"[TrackRender] '{job.label}' falling back to non-LaTeX labels: 'latex' executable not found", flush=True)
+            logger.warning("[TrackRender] '%s' falling back to non-LaTeX labels: 'latex' executable not found", job.label)
         else:
-            print("[TrackRender] Falling back to non-LaTeX labels: 'latex' executable not found", flush=True)
+            logger.warning("[TrackRender] Falling back to non-LaTeX labels: 'latex' executable not found")
     plt.rc('text', usetex=use_latex); rc('font', size=30)
 
     # required keys: grid_x, grid_y, grid_z, target_isoline, isolines, fps, grid_size
@@ -68,9 +75,9 @@ def run_track_render(job: TrackJob) -> None:
         if not has_ffmpeg:
             reason = "'ffmpeg' executable not found"
             if job.label:
-                print(f"[TrackRender] '{job.label}' skipping animation: {reason}", flush=True)
+                logger.warning("[TrackRender] '%s' skipping animation: %s", job.label, reason)
             else:
-                print(f"[TrackRender] Skipping animation: {reason}", flush=True)
+                logger.warning("[TrackRender] Skipping animation: %s", reason)
         else:
             def anim_fn(k: int):
                 artists = []
@@ -89,11 +96,11 @@ def run_track_render(job: TrackJob) -> None:
                 writer = None
             if writer is None:
                 if job.label:
-                    print(f"[TrackRender] '{job.label}' falling back to PillowWriter: FFMpegWriter unavailable", flush=True)
+                    logger.warning("[TrackRender] '%s' falling back to PillowWriter: FFMpegWriter unavailable", job.label)
                 else:
-                    print("[TrackRender] Falling back to PillowWriter: FFMpegWriter unavailable", flush=True)
+                    logger.warning("[TrackRender] Falling back to PillowWriter: FFMpegWriter unavailable")
                 writer = animation.PillowWriter(fps=fps)
             ani.save(job.out_gif, writer=writer)
     plt.close(fig)
     if job.label:
-        print(f"[TrackRender] Finished '{job.label}'", flush=True)
+        logger.info("[TrackRender] Finished '%s'", job.label)
