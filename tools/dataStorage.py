@@ -201,23 +201,31 @@ def create_timestamped_folder(*args, base_path="./data", timestamped_suffix="") 
     return folder_path
 
 
-def clean_data() -> None:
-    """
-        Deletes the 'data' folder in the script's directory if it exists.
-    """
-    # Get the path of the script's directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
+def clean_data(cache_dir: str = "data") -> None:
+    """Delete the directory used for cached experiment artifacts.
 
-    # Path to the 'data' folder
-    data_folder_path = os.path.join(script_dir, "..", "data")
+    Parameters
+    ----------
+    cache_dir:
+        Directory containing cached results. Relative paths are resolved from
+        the current working directory, matching how :class:`DataStorage`
+        creates its output directories.
+    """
 
-    # Check if the 'data' folder exists
-    if os.path.exists(data_folder_path) and os.path.isdir(data_folder_path):
-        # Delete the 'data' folder and its contents
-        shutil.rmtree(data_folder_path)
-        logger.info("Deleted 'data' folder at %s", data_folder_path)
+    if not cache_dir:
+        logger.warning("Empty cache_dir provided; skipping cache cleanup")
+        return
+
+    target_path = os.path.abspath(os.path.expanduser(cache_dir))
+    if os.path.abspath(target_path) == os.path.abspath(os.sep):
+        logger.warning("Refusing to remove cache directory at filesystem root: %s", target_path)
+        return
+
+    if os.path.isdir(target_path):
+        shutil.rmtree(target_path)
+        logger.info("Deleted cache directory at %s", target_path)
     else:
-        logger.info("'data' folder does not exist at %s", data_folder_path)
+        logger.info("Cache directory does not exist at %s", target_path)
 
 
 class DataStorage:

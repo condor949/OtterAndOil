@@ -141,7 +141,7 @@ if __name__ == '__main__':
     controller_manager = ControllerManager(controller_vehicle_groups, arguments)
 
     if arguments.clean_cache:
-        clean_data()
+        clean_data(getattr(arguments, "cache_dir", "data"))
     if arguments.big_picture:
         logger.warning('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
     space = sp.create_instance(arguments.peak_type,

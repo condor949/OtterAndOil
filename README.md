@@ -63,7 +63,7 @@ The main launch configuration file. Fields:
 
 | Field | Description |
 |------|-------------|
-| `clean_cache` | remove cached results in `data/` before launch (does not affect custom `cache_dir` values) |
+| `clean_cache` | remove cached results in the directory specified by `cache_dir` before launch |
 | `big_picture` | render large images (requires more memory) |
 | `not_animated` | disable track animation |
 | `store_raw` | save raw simulation data |
