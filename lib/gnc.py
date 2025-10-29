@@ -10,8 +10,12 @@ URL: www.fossen.biz/wiley
 Author:     Thor I. Fossen
 """
 
-import numpy as np
+import logging
 import math
+import numpy as np
+
+
+logger = logging.getLogger(__name__)
 
 
 #------------------------------------------------------------------------------
@@ -117,7 +121,7 @@ def Tzyx(phi, theta):
             [0, sphi / cth, cphi / cth]])
 
     except ZeroDivisionError:
-        print("Tzyx is singular for theta = +-90 degrees.")
+        logger.error("Tzyx is singular for theta = +-90 degrees.")
 
     return T
 

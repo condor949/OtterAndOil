@@ -1,9 +1,13 @@
-import os
 import datetime
-import shutil
 import json
+import logging
+import os
+import shutil
 from dataclasses import dataclass
 from typing import Iterable, Iterator, List, Optional, Sequence, Tuple
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -70,6 +74,8 @@ class ControllerVehiclePairs(Iterable[ControllerAssignment]):
         self._assignments: List[ControllerAssignment] = []
         self._sanitized: List[dict] = []
 
+        logger.debug("Parsing %d controller assignment(s)", len(pairs))
+
         for idx, pair in enumerate(pairs):
             if not isinstance(pair, dict):
                 raise TypeError(f"controller_vehicle_pairs[{idx}] must be a JSON object")
@@ -112,6 +118,13 @@ class ControllerVehiclePairs(Iterable[ControllerAssignment]):
                 sanitized_entry["start_points"] = [list(point) for point in start_points]
 
             self._sanitized.append(sanitized_entry)
+
+        total_vehicles = sum(assignment.total_vehicles() for assignment in self._assignments)
+        logger.info(
+            "Configured %d controller assignment(s) with %d total vehicle(s)",
+            len(self._assignments),
+            total_vehicles,
+        )
 
     def __iter__(self) -> Iterator[ControllerAssignment]:
         return iter(self._assignments)
@@ -183,6 +196,8 @@ def create_timestamped_folder(*args, base_path="./data", timestamped_suffix="") 
     # Create the new folder
     os.makedirs(folder_path, exist_ok=True)
 
+    logger.debug("Ensured data directory exists: %s", folder_path)
+
     return folder_path
 
 
@@ -200,9 +215,9 @@ def clean_data() -> None:
     if os.path.exists(data_folder_path) and os.path.isdir(data_folder_path):
         # Delete the 'data' folder and its contents
         shutil.rmtree(data_folder_path)
-        print(f"Deleted 'data' folder at: {data_folder_path}")
+        logger.info("Deleted 'data' folder at %s", data_folder_path)
     else:
-        print(f"'data' folder does not exist at: {data_folder_path}")
+        logger.info("'data' folder does not exist at %s", data_folder_path)
 
 
 class DataStorage:
@@ -212,21 +227,30 @@ class DataStorage:
                                                             f"s{series + 1}",
                                                             timestamped_suffix=self.timestamped_suffix,
                                                             base_path=f"./{cache_dir}")
+        logger.debug(
+            "Initialized DataStorage for type '%s' (series %s) at %s",
+            typename,
+            series + 1,
+            self.timestamped_folder,
+        )
 
     def __str__(self):
         return f'Result folder: {self.timestamped_folder}'
 
     def get_path(self, name, expansion) -> str:
-        return os.path.join(self.timestamped_folder,
+        path = os.path.join(self.timestamped_folder,
                             create_timestamped_filename_ext(name,
                                                             self.timestamped_suffix,
                                                             expansion))
+        logger.debug("Resolved path for %s.%s -> %s", name, expansion, path)
+        return path
 
     def create_child_storage(self, name: str) -> "DataStorage":
         child = DataStorage.__new__(DataStorage)
         child.timestamped_suffix = self.timestamped_suffix
         child.timestamped_folder = os.path.join(self.timestamped_folder, name)
         os.makedirs(child.timestamped_folder, exist_ok=True)
+        logger.debug("Created child storage '%s' at %s", name, child.timestamped_folder)
         return child
 
 
@@ -257,10 +281,13 @@ class Arguments:
 
 
 def read_and_assign_arguments(input_filename) -> Arguments:
+    logger.info("Loading configuration from %s", input_filename)
     with open(input_filename, 'r') as file:
         data = json.load(file)
 
-    return Arguments(**data)
+    arguments = Arguments(**data)
+    logger.debug("Loaded configuration keys: %s", ", ".join(sorted(data.keys())))
+    return arguments
 
 
 def overwrite_file(old_name, new_name) -> None:

@@ -42,5 +42,6 @@
     "radius": 1,
     "FPS": 30,
     "V_current": 0,
-    "beta_current": 30.0
+    "beta_current": 30.0,
+    "log_level": "INFO"
 }

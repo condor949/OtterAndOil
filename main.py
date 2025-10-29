@@ -21,6 +21,36 @@ from lib import *
 from tools import *
 
 WORK_THRESHOLD = 3000
+DEFAULT_CONFIG_FILENAME = "config.json"
+
+
+def _resolve_config_path(cli_path: str) -> str:
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidate = cli_path or DEFAULT_CONFIG_FILENAME
+    if not os.path.isabs(candidate):
+        candidate = os.path.join(base_dir, candidate)
+    return candidate
+
+
+def _configure_log_level(level_name: str, logger: logging.Logger) -> int:
+    if isinstance(level_name, str):
+        level = getattr(logging, level_name.upper(), None)
+        if not isinstance(level, int):
+            logger.warning("Unknown log level '%s', defaulting to INFO", level_name)
+            level = logging.INFO
+    elif isinstance(level_name, int):
+        level = level_name
+    else:
+        logger.warning("Unsupported log level type %s, defaulting to INFO", type(level_name).__name__)
+        level = logging.INFO
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+    for handler in root_logger.handlers:
+        handler.setLevel(level)
+    logger.setLevel(level)
+    logger.info("Log level configured: %s", logging.getLevelName(level))
+    return level
 
 
 def _controller_label(idx, controller):
@@ -72,7 +102,16 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
     logger = logging.getLogger("otter.main")
 
-    arguments = read_and_assign_arguments(args.config_filename)
+    config_filename = _resolve_config_path(args.config_filename)
+    logger.info("Using configuration file: %s", config_filename)
+    if not os.path.exists(config_filename):
+        logger.error("Configuration file not found: %s", config_filename)
+        raise FileNotFoundError(config_filename)
+
+    arguments = read_and_assign_arguments(config_filename)
+    configured_level = getattr(arguments, "log_level", "INFO")
+    effective_level = _configure_log_level(configured_level, logger)
+    arguments.log_level = logging.getLevelName(effective_level)
     controller_vehicle_pairs = ControllerVehiclePairs(arguments.controller_vehicle_pairs)
 
     ###############################################################################
@@ -97,14 +136,14 @@ if __name__ == '__main__':
 
     for _, vehicles in controller_vehicle_groups:
         for vehicle in vehicles:
-            print(vehicle)
+            logger.info("Configured vehicle: %s", vehicle)
 
     controller_manager = ControllerManager(controller_vehicle_groups, arguments)
 
     if arguments.clean_cache:
         clean_data()
     if arguments.big_picture:
-        print('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
+        logger.warning('BE CAREFUL THE BIG PICTURE MODE REQUIRES MORE MEMORY')
     space = sp.create_instance(arguments.peak_type,
                                x_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
                                y_range=(-arguments.axis_abs_max, arguments.axis_abs_max),
@@ -113,7 +152,7 @@ if __name__ == '__main__':
                                space_filename=arguments.peaks_filename,
                                target_isoline=arguments.target_isoline)
     space.set_contour_points(tol=1)
-    print(space)
+    logger.info("Space configuration:\n%s", space)
 
     for i in range(arguments.cycles):
         logger.info("Starting cycle %d/%d", i + 1, arguments.cycles)
@@ -257,10 +296,15 @@ if __name__ == '__main__':
         space.store_in_config()
         for controller_index, (controller, _) in enumerate(controller_runs):
             for vehicle_index, error_sum in enumerate(controller.sum_error_values):
-                print(f'controller {controller_index + 1} vehicle {vehicle_index}: e_norm = {error_sum / controller.sim_time}')
-            print(controller.e_max)
+                logger.info(
+                    "Controller %d vehicle %d: e_norm = %.6f",
+                    controller_index + 1,
+                    vehicle_index,
+                    error_sum / controller.sim_time,
+                )
+            logger.info("Controller %d maximum error threshold: %.6f", controller_index + 1, controller.e_max)
 
         logger.info("Cycle %d/%d completed", i + 1, arguments.cycles)
 
     logger.info("All cycles completed")
-    print('Done!')
+    logger.info('Done!')
