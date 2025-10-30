@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
     for i in range(arguments.cycles):
         logger.info("Starting cycle %d/%d", i + 1, arguments.cycles)
-        data_storage = DataStorage(space.type, i, arguments.cache_dir)
+        data_storage = DataStorage(space.type, i, arguments.cache_dir) if arguments.store_plot else None
 
         space.set_data_storage(data_storage)
         plotting_all(space,

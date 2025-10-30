@@ -56,15 +56,19 @@ class ControllerManager:
 
     def initialize_controllers(self,
                                space,
-                               data_storage: DataStorage) -> List[Tuple[BaseController, Optional[object]]]:
+                               data_storage: Optional[DataStorage] = None) -> List[Tuple[BaseController, Optional[object]]]:
         """Instantiate controllers and attach dedicated data storage objects."""
 
         self._controllers.clear()
         self.controller_runs.clear()
         self._vehicle_serials.clear()
 
-        self._data_storage = data_storage.create_child_storage("controllers")
-        logger.debug("Created controller root data storage at %s", self._data_storage.timestamped_folder)
+        if data_storage is not None:
+            self._data_storage = data_storage.create_child_storage("controllers")
+            logger.debug("Created controller root data storage at %s", self._data_storage.timestamped_folder)
+        else:
+            self._data_storage = None
+            logger.debug("Controller data storage disabled; plots will not be persisted")
 
         for assignment_index, (assignment, vehicles) in enumerate(self._controller_vehicle_groups, start=1):
             controller_mode = get_controller_type(assignment.controller_type)
@@ -146,12 +150,13 @@ class ControllerManager:
                              controller: BaseController,
                              assignment_index: int,
                              vehicles) -> None:
-        if self._data_storage is None:
-            raise RuntimeError("Data storage must be configured before registering controllers")
-
         storage_name = self._build_storage_name(controller, assignment_index, vehicles)
-        controller_storage = self._data_storage.create_child_storage(storage_name)
-        controller.set_data_storage(controller_storage)
+        controller_storage: Optional[DataStorage] = None
+        if self._data_storage is not None:
+            controller_storage = self._data_storage.create_child_storage(storage_name)
+            controller.set_data_storage(controller_storage)
+        else:
+            controller.set_data_storage(None)
 
         self._controllers.append(controller)
         self.controller_runs.append((controller, None))
@@ -163,7 +168,7 @@ class ControllerManager:
             controller.abbreviation,
             assignment_index,
             len(vehicles),
-            controller_storage.timestamped_folder,
+            controller_storage.timestamped_folder if controller_storage else "disabled",
         )
 
     @staticmethod

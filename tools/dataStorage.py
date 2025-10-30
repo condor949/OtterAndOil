@@ -281,10 +281,13 @@ class Arguments:
 
     # Save the variables to a new JSON file
     def store_in_config(self) -> None:
+        if self.data_storage is None:
+            logger.debug("Skipping argument configuration persistence; data storage is disabled")
+            return
         with open(self.data_storage.get_path("config", "json"), 'w') as config:
             json.dump(self.get_json_data(), config, indent=4)
 
-    def set_data_storage(self, data_storage: DataStorage) -> None:
+    def set_data_storage(self, data_storage: Optional[DataStorage]) -> None:
         self.data_storage = data_storage
 
 

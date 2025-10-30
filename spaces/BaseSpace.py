@@ -128,6 +128,8 @@ class BaseSpace(ABC):
         return json_data
 
     def store_in_config(self):
+        if self.data_storage is None:
+            return
         with open(self.data_storage.get_path("space", "json"), 'w') as config:
             json.dump(self.get_json_data(), config, indent=4)
 
