@@ -140,8 +140,38 @@ def plotVehicleStates(simTime, swarmData, folder, suffix):
                                  create_timestamped_filename_ext(f"states_v{i}",
                                                                  suffix,
                                                                  "png")))
-        i+=1
         plt.close()
+
+        # Separate figure: surge velocity u(t)
+        plt.figure(figsize=(10, 4), dpi=dpiValue)
+        plt.plot(t, u, label="Surge velocity")
+        plt.xlabel("Time,s", fontsize=12)
+        plt.ylabel("Surge velocity,m/s", fontsize=12)
+        plt.title("Surge velocity vs time", fontsize=12)
+        plt.legend(fontsize=legendSize1)
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(os.path.join(folder,
+                                 create_timestamped_filename_ext(f"surge_velocity_v{i}",
+                                                                 suffix,
+                                                                 "png")))
+        plt.close()
+
+        # Separate figure: yaw rate r(t)
+        plt.figure(figsize=(10, 4), dpi=dpiValue)
+        plt.plot(t, r, label="Yaw rate")
+        plt.xlabel("Time,s", fontsize=12)
+        plt.ylabel("Yaw rate,deg/s", fontsize=12)
+        plt.title("Yaw rate vs time", fontsize=12)
+        plt.legend(fontsize=legendSize1)
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(os.path.join(folder,
+                                 create_timestamped_filename_ext(f"yaw_rate_v{i}",
+                                                                 suffix,
+                                                                 "png")))
+        plt.close()
+        i += 1
 
 # plotControls(simTime, simData) plots the vehicle control inputs versus time
 # in figure no. figNo

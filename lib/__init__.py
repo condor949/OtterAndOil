@@ -3,3 +3,4 @@
 
 from .gnc import *
 from .plotTimeSeries import *
+from .control import *
