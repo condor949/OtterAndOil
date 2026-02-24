@@ -3,6 +3,9 @@ from .SwarmController import *
 from .IntensityBasedController import *
 from .IntensityAndLinearVelocityController import *
 from .IntensityAndLinearVelocityPIDController import *
+from .IntensityCascadeController import *
+from .HeadingAutopilotController import *
+from .StepInputController import *
 from .plotter import ControllerPlotter, PlotRenderOptions, TrackRenderOptions
 
 controller_instance = {}
@@ -28,3 +31,6 @@ register_class(SwarmController)
 register_class(IntensityBasedController)
 register_class(IntensityAndLinearVelocityController)
 register_class(IntensityAndLinearVelocityPIDController)
+register_class(IntensityCascadeController)
+register_class(HeadingAutopilotController)
+register_class(StepInputController)

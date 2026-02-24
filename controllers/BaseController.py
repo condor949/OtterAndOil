@@ -99,21 +99,33 @@ class BaseController(ABC):
         raise NotImplementedError("Controller must implement track_snapshot to support track plotting")
 
     def simultaneous_simulate(self) -> List[np.ndarray]:
-        DOF = 6  # degrees of freedom
+        # Detect DOF from the first vehicle's nu vector length
+        # 3-DOF: [u, v, r] -> DOF=3
+        # 6-DOF: [u, v, w, p, q, r] -> DOF=6
+        DOF = len(self.vehicles[0].nu) if self.vehicles else 6
 
         m_nu = []
         m_u_actual = []
         m_eta = []
 
         logger.info(
-            "Controller '%s' starting simultaneous simulation with %d vehicle(s) and %d steps",
+            "Controller '%s' starting simultaneous simulation with %d vehicle(s) and %d steps (DOF=%d)",
             self.name,
             self.number_of_vehicles,
             self.N,
+            DOF,
         )
 
         for vehicle in self.vehicles:
-            m_eta.append(np.array([vehicle.starting_point[1], vehicle.starting_point[0], 0, 0, 0, 0], float))
+            # Initialize eta based on DOF
+            # For 3-DOF: [y, x, psi] (matching 6-DOF convention where eta[0]=y, eta[1]=x)
+            # For 6-DOF: [y, x, z, phi, theta, psi]
+            if DOF == 3:
+                # 3-DOF: starting_point is [x, y], but we store as [y, x, psi] to match convention
+                m_eta.append(np.array([vehicle.starting_point[1], vehicle.starting_point[0], 0.0], float))
+            else:
+                # 6-DOF: starting_point is [x, y], stored as [y, x, z, phi, theta, psi]
+                m_eta.append(np.array([vehicle.starting_point[1], vehicle.starting_point[0], 0, 0, 0, 0], float))
             m_nu.append(vehicle.nu)
             m_u_actual.append(vehicle.u_actual)
 

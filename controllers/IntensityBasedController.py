@@ -91,6 +91,7 @@ class IntensityBasedController(BaseController):
             raise ValueError("Controller must be associated with a space before plotting tracks")
 
         colors = [self.colors[i] for i in range(self.number_of_vehicles)] if self.colors else None
+        serial_numbers = [vehicle.serial_number for vehicle in self.vehicles]
         return {
             "grid_x": self.space.get_X(),
             "grid_y": self.space.get_Y(),
@@ -100,4 +101,5 @@ class IntensityBasedController(BaseController):
             "isolines": self.isolines,
             "fps": self.FPS,
             "colors": colors,
+            "serial_numbers": serial_numbers,
         }

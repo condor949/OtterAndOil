@@ -57,6 +57,7 @@ def run_track_render(job: TrackJob) -> None:
     ax.set_title(job.title)
 
     quivers = []; plotData = []
+    serial_numbers = snap.get("serial_numbers", [])
     for i, sim in enumerate(job.sim_data):
         arr = np.asarray(sim); x = arr[:,0]; y = arr[:,1]; z = arr[:,2]
         step = max(len(x)//grid_size, 1); N = y[::step]; E = x[::step]; D = z[::step]
@@ -65,7 +66,12 @@ def run_track_render(job: TrackJob) -> None:
         q = ax.quiver(data[0][0], data[1][0], data[0][1]-data[0][0], data[1][1]-data[1][0],
                       angles='xy', scale_units='xy', scale=1, color=color, width=0.02, zorder=15, label='_nolegend_')
         quivers.append(q)
-        line, = ax.plot(data[0], data[1], lw=2, c=color, zorder=10, label=f'agent {i+1}')
+        # Use serial_number from snapshot if available, otherwise fallback to index
+        if i < len(serial_numbers):
+            vehicle_label = f'vehicle {serial_numbers[i]}'
+        else:
+            vehicle_label = f'vehicle {i+1}'
+        line, = ax.plot(data[0], data[1], lw=2, c=color, zorder=10, label=vehicle_label)
         plotData.append((line, data))
     ax.legend(); fig.tight_layout(); fig.savefig(job.out_png)
 
@@ -104,3 +110,98 @@ def run_track_render(job: TrackJob) -> None:
     plt.close(fig)
     if job.label:
         logger.info("[TrackRender] Finished '%s'", job.label)
+
+
+def run_track_render_simple(job: TrackJob) -> None:
+    """
+    Simple track renderer without intensity field (isolines).
+    Just plots the vehicle trajectory.
+    """
+    if not logging.getLogger().handlers:
+        logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+    import matplotlib; matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import matplotlib.animation as animation
+    from matplotlib import rc, rcParams, rcParamsDefault
+    if job.label:
+        logger.info("[TrackRenderSimple] Starting '%s'", job.label)
+    rcParams.update(rcParamsDefault)
+    use_latex = bool(job.use_latex)
+    if use_latex and shutil.which('latex') is None:
+        use_latex = False
+        if job.label:
+            logger.warning("[TrackRenderSimple] '%s' falling back to non-LaTeX labels: 'latex' executable not found", job.label)
+        else:
+            logger.warning("[TrackRenderSimple] Falling back to non-LaTeX labels: 'latex' executable not found")
+    plt.rc('text', usetex=use_latex); rc('font', size=30)
+
+    # Simple track rendering - no space data needed
+    snap = job.snapshot
+    fps = int(snap.get("fps", 30))
+    colors = list(snap.get("colors") or [])
+    grid_size = int(snap.get("grid_size", 50))  # For animation frames
+    if grid_size <= 0: grid_size = 50
+
+    size_cm = (50, 26) if job.big_picture else (25, 25)
+    fig, ax = plt.subplots(figsize=(_cm2inch(size_cm[0]), _cm2inch(size_cm[1])), dpi=job.dpi)
+    ax.set_xlabel('X, m / East'); ax.set_ylabel('Y, m / North')
+    ax.set_title(job.title)
+    ax.grid(True, alpha=0.3)
+    ax.set_aspect('equal', adjustable='box')
+
+    quivers = []; plotData = []
+    serial_numbers = snap.get("serial_numbers", [])
+    for i, sim in enumerate(job.sim_data):
+        arr = np.asarray(sim); x = arr[:,0]; y = arr[:,1]; z = arr[:,2]
+        step = max(len(x)//grid_size, 1); N = y[::step]; E = x[::step]; D = z[::step]
+        data = np.array([N, E], dtype=float); color = colors[i] if i < len(colors) else None
+        ax.plot(data[0][0], data[1][0], marker='*', markersize=10, color=color, label='_nolegend_', zorder=10)
+        if len(data[0]) > 1:
+            q = ax.quiver(data[0][0], data[1][0], data[0][1]-data[0][0], data[1][1]-data[1][0],
+                          angles='xy', scale_units='xy', scale=1, color=color, width=0.02, zorder=15, label='_nolegend_')
+            quivers.append(q)
+        # Use serial_number from snapshot if available, otherwise fallback to index
+        if i < len(serial_numbers):
+            vehicle_label = f'vehicle {serial_numbers[i]}'
+        else:
+            vehicle_label = f'vehicle {i+1}'
+        line, = ax.plot(data[0], data[1], lw=2, c=color, zorder=10, label=vehicle_label)
+        plotData.append((line, data))
+    ax.legend(); fig.tight_layout(); fig.savefig(job.out_png)
+
+    has_ffmpeg = shutil.which('ffmpeg') is not None
+
+    if job.animate and job.out_gif:
+        if not has_ffmpeg:
+            reason = "'ffmpeg' executable not found"
+            if job.label:
+                logger.warning("[TrackRenderSimple] '%s' skipping animation: %s", job.label, reason)
+            else:
+                logger.warning("[TrackRenderSimple] Skipping animation: %s", reason)
+        else:
+            def anim_fn(k: int):
+                artists = []
+                for (line, data), q in zip(plotData, quivers):
+                    idx = min(max(k, 0), data.shape[1]-1); line.set_data(data[0:2, :idx+1])
+                    if idx < data.shape[1]-1: dx = data[0, idx+1] - data[0, idx]; dy = data[1, idx+1] - data[1, idx]
+                    else: p = max(idx-1, 0); dx = data[0, idx] - data[0, p]; dy = data[1, idx] - data[1, p]
+                    n = np.hypot(dx, dy) or 1.0; L = 2.0; q.set_offsets([data[0, idx], data[1, idx]]); q.set_UVC(L*dx/n, L*dy/n)
+                    artists.extend([line, q])
+                return artists
+            ani = animation.FuncAnimation(fig, anim_fn, frames=grid_size, interval=200, blit=False, repeat=True)
+            writer = None
+            try:
+                writer = animation.FFMpegWriter(fps=fps)
+            except Exception:
+                writer = None
+            if writer is None:
+                if job.label:
+                    logger.warning("[TrackRenderSimple] '%s' falling back to PillowWriter: FFMpegWriter unavailable", job.label)
+                else:
+                    logger.warning("[TrackRenderSimple] Falling back to PillowWriter: FFMpegWriter unavailable")
+                writer = animation.PillowWriter(fps=fps)
+            ani.save(job.out_gif, writer=writer)
+    plt.close(fig)
+    if job.label:
+        logger.info("[TrackRenderSimple] Finished '%s'", job.label)

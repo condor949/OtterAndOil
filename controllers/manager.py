@@ -134,17 +134,25 @@ class ControllerManager:
 
     def _instantiate_controller(self, controller_name: str, vehicles, space) -> BaseController:
         arguments = self._arguments
-        return create_instance(controller_name,
-                               vehicles=vehicles,
-                               sim_time=arguments.sim_time_sec,
-                               sample_time=arguments.sample_time,
-                               space=space,
-                               FPS=arguments.FPS,
-                               isolines=arguments.isolines,
-                               eps=arguments.eps,
-                               e_max_cap=arguments.error_max_cap,
-                               dynamic_error_max=arguments.dynamic_error_max,
-                               smoothing=arguments.smoothing)
+        controller_kwargs = {
+            "vehicles": vehicles,
+            "sim_time": arguments.sim_time_sec,
+            "sample_time": arguments.sample_time,
+            "space": space,
+            "FPS": arguments.FPS,
+            "isolines": arguments.isolines,
+            "eps": arguments.eps,
+            "e_max_cap": arguments.error_max_cap,
+            "dynamic_error_max": arguments.dynamic_error_max,
+            "smoothing": arguments.smoothing
+        }
+        
+        # Добавить специфичные параметры для heading_autopilot
+        if controller_name == "heading_autopilot":
+            controller_kwargs["desired_heading_deg"] = getattr(arguments, "desired_heading_deg", 0)
+            controller_kwargs["tau_X"] = getattr(arguments, "tau_X", 120)
+        
+        return create_instance(controller_name, **controller_kwargs)
 
     def _register_controller(self,
                              controller: BaseController,
