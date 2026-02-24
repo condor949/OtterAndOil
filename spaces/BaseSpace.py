@@ -106,11 +106,29 @@ class BaseSpace(ABC):
 
     def plotting_surface(self, store_plot=False, **arguments):
         """
-        Plot the 3D surface with all peaks.
+        Plot the 3D surface with all peaks and the target isoline (intersection with plane z=target_isoline).
         """
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         ax.plot_surface(self.X, self.Y, self.Z, cmap='viridis')
+        # Semi-transparent plane at isoline level for better visibility of the contour
+        z_plane = np.full_like(self.X, self.target_isoline)
+        ax.plot_surface(
+            self.X, self.Y, z_plane,
+            color='red', alpha=0.25, shade=False
+        )
+        # Intersection line: contour of Z at level target_isoline, drawn in 3D at z=target_isoline
+        tmp_fig = plt.figure()
+        cs = plt.contour(self.X, self.Y, self.Z, levels=[self.target_isoline])
+        segs = cs.allsegs[0] if cs.allsegs else []
+        plt.close(tmp_fig)
+        plt.figure(fig.number)  # restore main figure as current so show/savefig use it
+        for seg in segs:
+            if len(seg) >= 2:
+                ax.plot(
+                    seg[:, 0], seg[:, 1], np.full(seg.shape[0], self.target_isoline),
+                    color='red', linewidth=2, label='Целевая изолиния' if seg is segs[0] else None
+                )
         ax.set_xlabel('X,m / East')
         ax.set_ylabel('Y,m / North')
         ax.set_zlabel('Intensity')
