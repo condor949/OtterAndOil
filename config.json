@@ -1,7 +1,7 @@
 {
     "clean_cache": false,
     "big_picture": false,
-    "not_animated": false,
+    "not_animated": true,
     "store_raw": false,
     "separating_plots": false,
     "store_plot": true,
@@ -14,34 +14,36 @@
     "eps": 0.001,
     "smoothing": 99,
     "grid_size": 500,
-    "axis_abs_max": 26,
+    "axis_abs_max": 80,
     "isolines": 10,
-    "peaks_filename": "peaks_.json",
-    "cache_dir": "data2",
+    "peaks_filename": "peaks_1_2.json",
+    "cache_dir": "data_otter_3d",
     "peak_type": "gaussian",
     "controller_vehicle_pairs": [
         {
             "vehicle_type": "otter",
-            "controller_type": "intensity",
-            "vehicles": 2,
-            "start_points": [[-10, 0], [-8, 0]]
+            "controller_type": "intensity_cascade",
+            "vehicles": 1,
+            "start_points": [[10, 0]]
         },
         {
-            "vehicle_type": "otter",
-            "controller_type": "intensity_and_linear_velocity_nonlinear_pid_control",
+            "vehicle_type": "dubins",
+            "controller_type": "intensity",
             "vehicles": 1,
-            "start_points": [[-6, 0]]
+            "start_points": [[15, 0]]
         }
     ],
-    "shift_vehicle": [-10, 0],
+    "shift_vehicle": [-25, 0],
     "shift_xyz": [0, 0, 0],
     "target_isoline": 10,
-    "sim_time_sec": 30,
+    "sim_time_sec": 150,
     "sample_time": 0.02,
     "cycles": 1,
     "radius": 1,
     "FPS": 30,
     "V_current": 0,
     "beta_current": 30.0,
-    "log_level": "INFO"
+    "log_level": "INFO",
+    "desired_heading_deg": 100.0,
+    "tau_X": 200.0
 }
