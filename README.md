@@ -54,7 +54,7 @@ For each series of runs the `DataStorage` class creates a timestamped directory 
   - `random_generators` — generators of random starting points, colors and other utilities;
   - `common` — functions for automatically calling visualization or saving methods.
 - **lib** – library with dynamics functions and simultaneous simulation (`gnc.py`, `simultaneousLoop.py`, etc.).
-- **space-genereator.py** – PyQt5 graphical tool for interactive construction of peak files.
+- **space-generator.py** – PyQt5 graphical tool for interactive construction of peak files.
 
 ## Configuration files
 
@@ -120,7 +120,7 @@ Defines the set of intensity peaks for the space. Each object contains the cente
 Controls axis selections, labels and legends for the generated plots. Keys correspond to plot names (e.g. `intensity`, `error`, `error_avg`), and each entry specifies which controller attributes to use for the X/Y axes and how to label the resulting chart.
 
 ## Auxiliary scripts
-- `space-genereator.py` — allows you to interactively create a peak file describing the field shape. The result is saved in `peaks_*.json` format.
+- `space-generator.py` — allows you to interactively create a peak file describing the field shape. The result is saved in `peaks_*.json` format.
 
 ## License
 
