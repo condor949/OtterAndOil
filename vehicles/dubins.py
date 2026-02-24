@@ -5,8 +5,11 @@ dubins.py:
 
 """
 import math
+import logging
 from .vehicle import *
 from tools.random_generators import *
+
+logger = logging.getLogger(__name__)
 
 
 class Dubins(Vehicle):
@@ -54,6 +57,10 @@ class Dubins(Vehicle):
             "Right propeller shaft speed (rad/s)"
         ]
         self.dimU = len(self.controls)
+        # In sim_data, "nu" is d(eta)/dt; yaw rate d(psi)/dt is at index 3
+        self.yaw_rate_nu_index = 3
+        # Surge speed = magnitude of horizontal velocity (nu[0]=dy, nu[1]=dx)
+        self.surge_velocity_nu_indices = (0, 1)
 
         # Propeller configuration/input matrix. Relates wheel angular
         # velocities to the desired surge velocity (tau_X) and yaw rate
@@ -68,6 +75,16 @@ class Dubins(Vehicle):
         B_mat = np.array([[self.R / 2, self.R / 2],
                           [-self.R / self.B, self.R / self.B]])
         self.Binv = np.linalg.inv(B_mat)
+
+        # Diagnostic: allowed wheel speed difference and resulting max yaw rate
+        delta_n_max = self.n_max - self.n_min
+        omega_max_rad = delta_n_max * self.R / self.B
+        omega_max_deg = float(np.degrees(omega_max_rad))
+        logger.info(
+            "Dubins limits: n_min = %s, n_max = %s, Delta_n_max = %.4f rad/s, "
+            "omega_max = %.4f rad/s (%.2f deg/s)",
+            self.n_min, self.n_max, delta_n_max, omega_max_rad, omega_max_deg,
+        )
 
     def __str__(self):
         return (f'---vehicle--------------------------------------------------------------------------\n'

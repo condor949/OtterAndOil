@@ -3,6 +3,7 @@
 from .vehicle import Vehicle
 from .otter import Otter
 from .dubins import Dubins
+from .otter_3d import Otter3D
 
 vehicle_instance = {}
 
@@ -19,3 +20,4 @@ def create_instance(class_name: str, **arguments) -> Vehicle:
 
 register_class(Otter)
 register_class(Dubins)
+register_class(Otter3D)

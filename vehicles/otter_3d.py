@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-otter.py: 
-    Class for the Maritime Robotics Otter USV, www.maritimerobotics.com. 
+3dotter.py: 
+    3-DOF horizontal-plane reduction of otter.py
+    
+    Class for the Maritime Robotics Otter USV in 3-DOF (surge, sway, yaw).
     The length of the USV is L = 2.0 m. The constructors are:
 
-    otter()                                          
+    Otter3D()                                          
         Step inputs for propeller revolutions n1 and n2
         
 Methods:
@@ -27,22 +29,21 @@ References:
      Control. 2nd. Edition, Wiley. 
      URL: www.fossen.biz/wiley            
 
-Author:     Thor I. Fossen
+Author:     Derived from otter.py by Thor I. Fossen
 """
 import math
+import numpy as np
 from .vehicle import *
-from lib import attitudeEuler
-from tools.random_generators import *
-from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat, Tzyx
+from lib.gnc import Smtrx, Hmtrx, Rzyx, m2c, crossFlowDrag, sat
 from tools.diagnostic_logger import DiagnosticLogger
 
 
 # Class Vehicle
-class Otter(Vehicle):
+class Otter3D(Vehicle):
     """
-    otter()                                           Propeller step inputs
+    Otter3D()                                           Propeller step inputs
     """
-    name = 'otter'
+    name = 'otter3d'
     def __init__(
             self,
             controlSystem="stepInput",
@@ -63,6 +64,10 @@ class Otter(Vehicle):
         self.g = 9.81  # acceleration of gravity (m/s^2)
         rho = 1026  # density of water (kg/m^3)
 
+        # Set current speed and direction
+        self.V_c = V_current
+        self.beta_c = beta_current * D2R
+
         # Control system description
         if controlSystem == "stepInput":
             self.controlDescription = "Step inputs for n1 and n2"
@@ -71,19 +76,16 @@ class Otter(Vehicle):
         else:
             self.controlDescription = "sigma"
             controlSystem = "Berman Law"
-            # self.controlDescription = "Step inputs for n1 and n2"
-            # controlSystem = "stepInput"
 
-        self.beta_c = beta_current * D2R
         self.controlMode = controlSystem
 
         # Initialize the Otter USV model
         self.T_n = 1.0  # propeller time constants (s)
         self.L = 2.0  # Length (m)
         self.B = 1.08  # beam (m)
-        self.nu = np.array([0, 0, 0, 0, 0, 0], float)  # velocity vector
+        self.nu = np.array([0, 0, 0], float)  # velocity vector [u, v, r]
         self.u_actual = np.array([0, 0], float)  # propeller revolution states
-        self.type = "Otter USV (see 'otter.py' for more details)"
+        self.type = "Otter USV 3-DOF (see 'otter_3d.py' for more details)"
 
         self.controls = [
             "Left propeller shaft speed (rad/s)",
@@ -91,7 +93,7 @@ class Otter(Vehicle):
         ]
         self.dimU = len(self.controls)
 
-        # Vehicle parameters
+        # Vehicle parameters (same as otter.py)
         m = 55.0  # mass (kg)
         self.mp = 25.0  # Payload (kg)
         self.m_total = m + self.mp
@@ -129,14 +131,15 @@ class Otter(Vehicle):
         self.n_max = math.sqrt((0.5 * 24.4 * self.g) / self.k_pos)  # max. prop. rev.
         self.n_min = -math.sqrt((0.5 * 13.6 * self.g) / self.k_neg)  # min. prop. rev.
 
+        # Build 6-DOF MRB exactly like otter.py
         # MRB_CG = [ (m+mp) * I3  O3      (Fossen 2021, Chapter 3)
         #               O3       Ig ]
         MRB_CG = np.zeros((6, 6))
         MRB_CG[0:3, 0:3] = (m + self.mp) * np.identity(3)
         MRB_CG[3:6, 3:6] = self.Ig
-        MRB = self.H_rg.T @ MRB_CG @ self.H_rg
+        MRB_6 = self.H_rg.T @ MRB_CG @ self.H_rg
 
-        # Hydrodynamic added mass (best practice)
+        # Hydrodynamic added mass (best practice) - same as otter.py
         Xudot = -0.1 * m
         Yvdot = -1.5 * m
         Zwdot = -1.0 * m
@@ -144,13 +147,16 @@ class Otter(Vehicle):
         Mqdot = -0.8 * self.Ig[1, 1]
         Nrdot = -1.7 * self.Ig[2, 2]
 
-        self.MA = -np.diag([Xudot, Yvdot, Zwdot, Kpdot, Mqdot, Nrdot])
+        self.MA_6 = -np.diag([Xudot, Yvdot, Zwdot, Kpdot, Mqdot, Nrdot])
 
-        # System mass matrix
-        self.M = MRB + self.MA
+        # System mass matrix in 6-DOF
+        M_6 = MRB_6 + self.MA_6
+
+        # Reduce to 3-DOF by extracting indices [0, 1, 5] (u, v, r)
+        self.M = M_6[np.ix_([0, 1, 5], [0, 1, 5])]
         self.Minv = np.linalg.inv(self.M)
 
-        # Hydrostatic quantities (Fossen 2021, Chapter 4)
+        # Hydrostatic quantities (Fossen 2021, Chapter 4) - computed but not used in 3-DOF
         Aw_pont = Cw_pont * self.L * self.B_pont  # waterline area, one pontoon
         I_T = (
                 2
@@ -176,22 +182,26 @@ class Otter(Vehicle):
         G_CF = np.diag([0, 0, G33, G44, G55, 0])  # spring stiff. matrix in CF
         LCF = -0.2
         H = Hmtrx(np.array([LCF, 0.0, 0.0]))  # transform G_CF from CF to CO
-        self.G = H.T @ G_CF @ H
+        self.G_6 = H.T @ G_CF @ H
+        # In 3-DOF horizontal model, G_3D = 0 (no hydrostatic restoring in horizontal plane)
+        self.G = np.zeros((3, 3))
 
-        # Natural frequencies
-        w3 = math.sqrt(G33 / self.M[2, 2])
-        w4 = math.sqrt(G44 / self.M[3, 3])
-        w5 = math.sqrt(G55 / self.M[4, 4])
+        # Natural frequencies (for damping computation)
+        w3 = math.sqrt(G33 / M_6[2, 2])
+        w4 = math.sqrt(G44 / M_6[3, 3])
+        w5 = math.sqrt(G55 / M_6[4, 4])
 
-        # Linear damping terms (hydrodynamic derivatives)
+        # Linear damping terms (hydrodynamic derivatives) - same as otter.py
         Xu = -24.4 * self.g / Umax  # specified using the maximum speed
         Yv = -self.M[1, 1]  / T_sway # specified using the time constant in sway
-        Zw = -2 * 0.3 * w3 * self.M[2, 2]  # specified using relative damping
-        Kp = -2 * 0.2 * w4 * self.M[3, 3]
-        Mq = -2 * 0.4 * w5 * self.M[4, 4]
-        Nr = -self.M[5, 5] / T_yaw  # specified by the time constant T_yaw
+        Zw = -2 * 0.3 * w3 * M_6[2, 2]  # specified using relative damping
+        Kp = -2 * 0.2 * w4 * M_6[3, 3]
+        Mq = -2 * 0.4 * w5 * M_6[4, 4]
+        Nr = -M_6[5, 5] / T_yaw  # specified by the time constant T_yaw
 
-        self.D = -np.diag([Xu, Yv, Zw, Kp, Mq, Nr])
+        self.D_6 = -np.diag([Xu, Yv, Zw, Kp, Mq, Nr])
+        # Reduce to 3-DOF
+        self.D = self.D_6[np.ix_([0, 1, 5], [0, 1, 5])]
 
         # Propeller configuration/input matrix
         B = self.k_pos * np.array([[1, 1], [-self.l1, -self.l2]])
@@ -202,51 +212,68 @@ class Otter(Vehicle):
         self.step_count = 0
 
     def __str__(self):
+        if self.starting_point is not None:
+            sp_str = f'[{self.starting_point[0]}, {self.starting_point[1]}]'
+        else:
+            sp_str = '[None]'
         return (f'---vehicle--------------------------------------------------------------------------\n'
                 f'{self.type}\n'
                 f'Length: {self.L} m\n'
                 f'Control: {self.controlDescription}\n'
-                f'Starting point: [{self.starting_point[0]}, {self.starting_point[1]}]')
+                f'Starting point: {sp_str}')
 
     def dynamics(self, eta, nu, u_actual, u_control, sampleTime):
         """
         [nu,u_actual] = dynamics(eta,nu,u_actual,u_control,sampleTime) integrates
-        the Otter USV equations of motion using Euler's method.
+        the Otter USV 3-DOF equations of motion using Euler's method.
         """
 
         # Input vector
         n = np.array([u_actual[0], u_actual[1]])
 
-        # Current velocities
-        u_c = self.V_c * math.cos(self.beta_c - eta[5])  # current surge vel.
-        v_c = self.V_c * math.sin(self.beta_c - eta[5])  # current sway vel.
+        # Current velocities - same computation as otter.py
+        psi = eta[2]  # yaw angle in 3-DOF
+        r = nu[2]  # yaw rate
+        u_c = self.V_c * math.cos(self.beta_c - psi)  # current surge vel.
+        v_c = self.V_c * math.sin(self.beta_c - psi)  # current sway vel.
 
-        nu_c = np.array([u_c, v_c, 0, 0, 0, 0], float)  # current velocity vector
-        Dnu_c = np.array([nu[5] * v_c, -nu[5] * u_c, 0, 0, 0, 0], float)  # derivative
-        nu_r = nu - nu_c  # relative velocity vector
+
+        # Build 6-DOF current vectors (for consistency with otter.py)
+        nu_c_6 = np.array([u_c, v_c, 0, 0, 0, 0], float)  # current velocity vector
+        Dnu_c_6 = np.array([r * v_c, -r * u_c, 0, 0, 0, 0], float)  # derivative
+        
+        # Reduce to 3-DOF
+        nu_c_3 = nu_c_6[[0, 1, 5]]  # [u_c, v_c, 0]
+        Dnu_c_3 = Dnu_c_6[[0, 1, 5]]  # [r*v_c, -r*u_c, 0]
+
+        # Build 6-DOF nu for matrix computations
+        nu_6 = np.array([nu[0], nu[1], 0, 0, 0, nu[2]], float)  # [u, v, 0, 0, 0, r]
+        nu_r_6 = nu_6 - nu_c_6  # relative velocity vector in 6-DOF
+        nu_r_3 = nu_r_6[[0, 1, 5]]  # [u_r, v_r, r_r]
 
         # Rigid body and added mass Coriolis and centripetal matrices
+        # Compute CRB in 6-DOF exactly like otter.py
         # CRB_CG = [ (m+mp) * Smtrx(nu2)          O3   (Fossen 2021, Chapter 6)
         #              O3                   -Smtrx(Ig*nu2)  ]
         CRB_CG = np.zeros((6, 6))
-        CRB_CG[0:3, 0:3] = self.m_total * Smtrx(nu[3:6])
-        CRB_CG[3:6, 3:6] = -Smtrx(np.matmul(self.Ig, nu[3:6]))
-        CRB = self.H_rg.T @ CRB_CG @ self.H_rg  # transform CRB from CG to CO
+        CRB_CG[0:3, 0:3] = self.m_total * Smtrx(nu_6[3:6])
+        CRB_CG[3:6, 3:6] = -Smtrx(np.matmul(self.Ig, nu_6[3:6]))
+        CRB_6 = self.H_rg.T @ CRB_CG @ self.H_rg  # transform CRB from CG to CO
 
-        CA = m2c(self.MA, nu_r)
-        CA[5, 0] = 0  # assume that the Munk moment in yaw can be neglected
-        CA[5, 1] = 0  # if nonzero, must be balanced by adding nonlinear damping
-        CA[0, 5] = 0
-        CA[1, 5] = 0
+        # Compute CA in 6-DOF exactly like otter.py
+        CA_6 = m2c(self.MA_6, nu_r_6)
+       # CA_6[5, 0] = 0  # assume that the Munk moment in yaw can be neglected
+       # CA_6[5, 1] = 0  # if nonzero, must be balanced by adding nonlinear damping
+       # CA_6[0, 5] = 0
+       # CA_6[1, 5] = 0
 
-        C = CRB + CA
+        C_6 = CRB_6 + CA_6
+        # Reduce to 3-DOF
+        C_3 = C_6[np.ix_([0, 1, 5], [0, 1, 5])]
 
-        # Payload force and moment expressed in BODY
-        R = Rzyx(eta[3], eta[4], eta[5])
-        f_payload = np.matmul(R.T, np.array([0, 0, self.mp * self.g], float))
-        m_payload = np.matmul(self.S_rp, f_payload)
-        g_0 = np.array([f_payload[0], f_payload[1], f_payload[2],
-                        m_payload[0], m_payload[1], m_payload[2]])
+        # Payload force and moment - computed but not used in 3-DOF horizontal model
+        # (g_0 is mainly z/roll/pitch related, so omit in 3-DOF)
+        g_0_3 = np.array([0, 0, 0], float)
 
         # Control forces and moments - with propeller revolution saturation
         thrust = np.zeros(2)
@@ -259,44 +286,33 @@ class Otter(Vehicle):
             else:  # negative thrust
                 thrust[i] = self.k_neg * n[i] * abs(n[i])
 
-        # Control forces and moments
-        tau = np.array(
-            [
-                thrust[0] + thrust[1],
-                0,
-                0,
-                0,
-                0,
-                -self.l1 * thrust[0] - self.l2 * thrust[1],
-            ]
-        )
+        # Control forces and moments - same as otter.py
+        tau_X = thrust[0] + thrust[1]
+        tau_N = -self.l1 * thrust[0] - self.l2 * thrust[1]
+        tau_3 = np.array([tau_X, 0, tau_N], float)
 
         # Hydrodynamic linear damping + nonlinear yaw damping
-        tau_damp = -np.matmul(self.D, nu_r)
-        tau_damp[5] = tau_damp[5] - 10 * self.D[5, 5] * abs(nu_r[5]) * nu_r[5]
+        # Compute in 6-DOF first (for consistency with otter.py)
+        tau_damp_6 = -np.matmul(self.D_6, nu_r_6)
+        tau_damp_6[5] = tau_damp_6[5] - 10 * self.D_6[5, 5] * abs(nu_r_6[5]) * nu_r_6[5]
+        
+        # Reduce to 3-DOF
+        tau_damp_3 = tau_damp_6[[0, 1, 5]]
+
+        # Cross-flow drag - compute in 6-DOF, then reduce
+        tau_crossflow_6 = crossFlowDrag(self.L, self.B_pont, self.T, nu_r_6)
+        tau_crossflow_3 = tau_crossflow_6[[0, 1, 5]]
 
         # State derivatives (with dimension)
-        tau_crossflow = crossFlowDrag(self.L, self.B_pont, self.T, nu_r)
-        sum_tau = (
-                tau
-                + tau_damp
-                + tau_crossflow
-                - np.matmul(C, nu_r)
-                - np.matmul(self.G, eta)
-                + g_0
+        sum_tau_3 = (
+                tau_3
+                + tau_damp_3
+                + tau_crossflow_3
+                - np.matmul(C_3, nu_r_3)
+                + g_0_3  # g_0_3 = 0, but keep for consistency
         )
 
-        # print(f"{sum_tau=}")
-        # print(f"{tau=}")
-        # print(f"{tau_damp=}")
-
-        # print(tau_damp)
-        # print(tau_crossflow)
-        # print(np.matmul(C, nu_r))
-        # print(np.matmul(self.G, eta))
-        # print(g_0)
-
-        nu_dot = Dnu_c + np.matmul(self.Minv, sum_tau)  # USV dynamics
+        nu_dot_3 = Dnu_c_3 + np.matmul(self.Minv, sum_tau_3)  # USV dynamics
         n_dot = (u_control - n) / self.T_n  # propeller dynamics
 
         real = False
@@ -305,34 +321,34 @@ class Otter(Vehicle):
             n = u_control
         else:
             n = n + sampleTime * n_dot
-        nu = nu + sampleTime * nu_dot
+        nu = nu + sampleTime * nu_dot_3
 
         u_actual = np.array(n, float)
 
         # Diagnostic logging
         if self.diagnostic_logger is not None:
-            # Extract 3DOF components for logging
-            nu_3dof = np.array([nu[0], nu[1], nu[5]], float)
-            eta_3dof = np.array([eta[1], eta[0], eta[5]], float)  # x, y, psi
-            nu_dot_3dof = np.array([nu_dot[0], nu_dot[1], nu_dot[5]], float)
-            
-            # Compute eta_dot for logging
-            p_dot = np.matmul(Rzyx(eta[3], eta[4], eta[5]), nu[0:3])
-            v_dot = np.matmul(Tzyx(eta[3], eta[4]), nu[3:6])
-            eta_dot_6dof = np.concatenate([p_dot, v_dot])
-            eta_dot_3dof = np.array([eta_dot_6dof[1], eta_dot_6dof[0], eta_dot_6dof[5]], float)
+            # Compute eta_dot for logging (matching repositioning formulas)
+            psi = eta[2]
+            u = nu[0]
+            v = nu[1]
+            r = nu[2]
+            # Match Rzyx convention: y_dot = cos(psi)*u - sin(psi)*v, x_dot = sin(psi)*u + cos(psi)*v
+            y_dot = math.cos(psi) * u - math.sin(psi) * v
+            x_dot = math.sin(psi) * u + math.cos(psi) * v
+            psi_dot = r
+            eta_dot_3dof = np.array([y_dot, x_dot, psi_dot], float)  # y_dot, x_dot, psi_dot
             
             self.diagnostic_logger.log_step(
                 t=self.step_count * sampleTime,
                 n_cmd=u_control,
                 n_actual=u_actual,
                 thrust=thrust,
-                tau=tau,
-                nu=nu_3dof,
-                eta=eta_3dof,
-                nu_dot=nu_dot_3dof,
+                tau=tau_3,
+                nu=nu,
+                eta=eta,
+                nu_dot=nu_dot_3,
                 eta_dot=eta_dot_3dof,
-                nu_c=nu_c,
+                nu_c=nu_c_3,
                 V_c=self.V_c,
                 beta_c=self.beta_c
             )
@@ -400,4 +416,66 @@ class Otter(Vehicle):
         return u_control
 
     def repositioning(self, eta, nu, sample_time):
-        return attitudeEuler(eta, nu, sample_time)
+        """
+        eta = repositioning(eta,nu,sample_time) computes the generalized 
+        position/Euler angles eta[k+1] for 3-DOF horizontal plane motion.
+        
+        Note: eta format is [y, x, psi] to match 6-DOF convention where
+        eta[0] = y, eta[1] = x (matching BaseController initialization).
+        """
+        # 3-DOF kinematics (matching 6-DOF Rzyx convention)
+        # For horizontal plane: Rzyx(0, 0, psi) gives:
+        #   p_dot[0] = y_dot = cos(psi)*u - sin(psi)*v
+        #   p_dot[1] = x_dot = sin(psi)*u + cos(psi)*v
+        # Note: eta[0] = y, eta[1] = x (matching 6-DOF convention where eta[0:3] = [y, x, z])
+        psi = eta[2]
+        u = nu[0]
+        v = nu[1]
+        r = nu[2]
+
+        # Match Rzyx(0, 0, psi) @ [u, v, 0] result:
+        y_dot = math.cos(psi) * u - math.sin(psi) * v
+        x_dot = math.sin(psi) * u + math.cos(psi) * v
+        psi_dot = r
+
+        # Forward Euler integration
+        # Note: eta[0] = y, eta[1] = x (matching 6-DOF convention)
+        eta[0] = eta[0] + sample_time * y_dot
+        eta[1] = eta[1] + sample_time * x_dot
+        eta[2] = eta[2] + sample_time * psi_dot
+
+        return eta
+
+
+if __name__ == "__main__":
+    # Minimal self-test
+    print("Testing Otter3D class...")
+    
+    # Instantiate with some current
+    otter3d = Otter3D(V_current=0.5, beta_current=30)
+    
+    # Print matrix shapes
+    print(f"M3 shape: {otter3d.M.shape}")
+    print(f"D3 shape: {otter3d.D.shape}")
+    print(f"M3:\n{otter3d.M}")
+    print(f"D3:\n{otter3d.D}")
+    
+    # Run a few steps with zero inputs
+    eta = np.array([0.0, 0.0, 0.0], float)  # [x, y, psi]
+    nu = np.array([0.0, 0.0, 0.0], float)  # [u, v, r]
+    u_actual = np.array([0.0, 0.0], float)
+    u_control = np.array([0.0, 0.0], float)
+    dt = 0.1
+    
+    print(f"\nInitial state:")
+    print(f"eta = {eta}")
+    print(f"nu = {nu}")
+    
+    for i in range(3):
+        nu, u_actual = otter3d.dynamics(eta, nu, u_actual, u_control, dt)
+        eta = otter3d.repositioning(eta, nu, dt)
+        print(f"\nStep {i+1}:")
+        print(f"nu = {nu}")
+        print(f"eta = {eta}")
+    
+    print("\nTest completed.")
