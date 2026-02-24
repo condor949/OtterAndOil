@@ -15,7 +15,7 @@ import spaces as sp
 import vehicles as vs
 from controllers.manager import ControllerManager
 from controllers.plotter import ControllerPlotter, PlotRenderOptions, TrackRenderOptions
-from controllers.plot_jobs import TrackJob, run_track_render
+from controllers.plot_jobs import TrackJob, run_track_render, run_track_render_simple
 
 from lib import *
 from tools import *
@@ -207,6 +207,25 @@ if __name__ == '__main__':
 
         if total_controllers:
             logger.info("Simulation phase completed")
+            # Cascade controller stats (max tau/n1/n2, x,y range)
+            for controller in controllers_only:
+                if getattr(controller, 'log_tau_X', None):
+                    arr = controller.log_tau_X
+                    if len(arr):
+                        logger.info(
+                            "[Cascade] max |tau_X|=%.2f max |tau_N|=%.2f max |n1|=%.2f max |n2|=%.2f",
+                            float(max(abs(x) for x in arr)),
+                            float(max(abs(x) for x in controller.log_tau_N)),
+                            float(max(abs(x) for x in controller.log_n1)),
+                            float(max(abs(x) for x in controller.log_n2)),
+                        )
+                    if getattr(controller, 'sim_data', None) and controller.sim_data:
+                        for v_idx, sd in enumerate(controller.sim_data):
+                            # eta = [y, x, psi] for 3-DOF; columns 0,1,2
+                            x_col, y_col = 1, 0
+                            xs, ys = sd[:, x_col], sd[:, y_col]
+                            logger.info("[Cascade] vehicle %d x in [%.2f, %.2f] m  y in [%.2f, %.2f] m",
+                                        v_idx, float(np.min(xs)), float(np.max(xs)), float(np.min(ys)), float(np.max(ys)))
 
         controller_runs = list(controller_manager.controller_runs)
 
@@ -264,8 +283,15 @@ if __name__ == '__main__':
                 proc_workers = min(len(jobs), max(1, os.cpu_count() or 1))
                 logger.info("Spawning %d process(es) for %d track job(s)", proc_workers, len(jobs))
                 with ProcessPoolExecutor(max_workers=proc_workers) as pool:
-                    futures = {pool.submit(run_track_render, job): job.label or controller_labels.get(i, f"controller #{i + 1}")
-                               for i, job in enumerate(jobs)}
+                    futures = {}
+                    for i, job in enumerate(jobs):
+                        # Use simple track renderer if controller has simple_track flag
+                        use_simple = job.snapshot.get("simple_track", False)
+                        render_func = run_track_render_simple if use_simple else run_track_render
+                        if use_simple:
+                            job.title = "Vehicle track"  # Update title for simple tracks
+                        label = job.label or controller_labels.get(i, f"controller #{i + 1}")
+                        futures[pool.submit(render_func, job)] = label
                     logger.info("Waiting for track rendering jobs to complete...")
                     for future in as_completed(futures):
                         label = futures[future]
@@ -290,6 +316,23 @@ if __name__ == '__main__':
         plotter.plotting_error_avg(combine=True)
         plotter.plotting_track(combine=True)
         logger.info("Finished rendering intensity and error plots")
+        
+        # Plot control inputs for all controllers
+        logger.info("Rendering control plots")
+        plotter.plotting_control()
+        logger.info("Finished rendering control plots")
+
+        # Plot tau_X, tau_N and n1/n2 (command vs actual) for cascade verification
+        logger.info("Rendering tau_allocation plots")
+        plotter.plotting_tau_allocation()
+        logger.info("Finished rendering tau_allocation plots")
+
+                # Графики yaw rate и surge velocity
+        logger.info("Rendering yaw rate and surge velocity plots")
+        plotter.plotting_yaw_rate()
+        plotter.plotting_surge_velocity()
+        plotter.plotting_yaw_rate_comparison()
+        logger.info("Finished rendering yaw rate and surge velocity plots")
 
         arguments.set_data_storage(data_storage)
         arguments.store_in_config()
